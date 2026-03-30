@@ -1,193 +1,136 @@
-.briefing-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-}
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Star, GraduationCap, Newspaper, Briefcase, Check, Zap } from 'lucide-react';
+import { usePremium, TIERS } from '../context/PremiumContext';
+import './UpgradeModal.css';
 
-.briefing-header {
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  background-color: rgba(11, 12, 16, 0.8);
-}
+const PLAN_ICONS = {
+  [TIERS.STUDENT]: GraduationCap,
+  [TIERS.JOURNALIST]: Newspaper,
+  [TIERS.CONSULTANT]: Briefcase,
+};
 
-.mode-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: monospace;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--brand-purple-hover);
-  background: var(--brand-purple-muted);
-  padding: 6px 12px;
-  border-radius: 4px;
-  border: 1px solid rgba(157, 78, 221, 0.3);
-}
+const PLAN_FEATURES = {
+  [TIERS.STUDENT]: [
+    'Unlimited queries (Free: 15/day)',
+    'All 5 modes + Combined History Output',
+    'Argument Evaluator — AI scores your JAM/GD speech',
+    'Counter-Argument Generator — 3 sharp rebuttals per query',
+    'ELI18 Exam-Ready Summary — simplified with analogies',
+    'PDF Export — one-click debate prep sheet',
+    'Unlimited history storage',
+  ],
+  [TIERS.JOURNALIST]: [
+    'Everything in Student',
+    'RTI Angle Generator',
+    'Policy Timeline Builder',
+    'Hidden Story Angles (3 per query)',
+    'Article Opener Draft',
+    'Government Claim Tracker',
+    'Multi-language summary',
+  ],
+  [TIERS.CONSULTANT]: [
+    'Everything in Journalist',
+    'Alliance Risk Scanner',
+    'Swing Factor Analysis',
+    'Narrative Stress Test (full 3-round)',
+    'Opposition Research Dossier',
+    'Constituency Impact Profile',
+    'White-label PDF reports',
+    'API access',
+  ],
+};
 
-.briefing-content {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
+const UpgradeModal = () => {
+  const { showUpgradeModal, closeUpgradeModal, upgradeTo, TIER_CONFIG, TIERS, targetTier, tier } = usePremium();
 
-.empty-state {
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  max-width: 500px;
-  color: var(--text-muted);
-  opacity: 0.6;
-}
+  const plans = [TIERS.STUDENT, TIERS.JOURNALIST, TIERS.CONSULTANT];
 
-.empty-icon {
-  margin-bottom: 20px;
-  color: var(--brand-purple);
-  opacity: 0.5;
-}
+  return (
+    <AnimatePresence>
+      {showUpgradeModal && (
+        <motion.div
+          className="modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={closeUpgradeModal}
+        >
+          <motion.div
+            className="modal-container"
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            transition={{ type: 'spring', duration: 0.4 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div className="modal-title-wrap">
+                <Star size={20} className="modal-star" />
+                <h2>UNLOCK PREMIUM INTELLIGENCE</h2>
+              </div>
+              <button className="modal-close" onClick={closeUpgradeModal}><X size={18} /></button>
+            </div>
 
-.empty-state h2 {
-  font-size: 1.2rem;
-  letter-spacing: 2px;
-  margin-bottom: 12px;
-  color: var(--text-primary);
-}
+            <p className="modal-subtitle">
+              Choose your tier. Analysts win debates. War Rooms win elections.
+            </p>
 
-.empty-state p {
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
+            <div className="plans-grid">
+              {plans.map(planKey => {
+                const config = TIER_CONFIG[planKey];
+                const Icon = PLAN_ICONS[planKey];
+                const features = PLAN_FEATURES[planKey];
+                const isHighlighted = targetTier === planKey;
+                const isActive = tier === planKey;
 
-.query-section {
-  padding: 24px;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--bg-surface);
-}
+                return (
+                  <motion.div
+                    key={planKey}
+                    className={`plan-card ${isHighlighted ? 'plan-highlighted' : ''} ${isActive ? 'plan-active' : ''}`}
+                    style={{ '--plan-color': config.color, '--plan-bg': config.bg, '--plan-border': config.border }}
+                    whileHover={{ y: -4 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                  >
+                    {isHighlighted && <div className="plan-badge">RECOMMENDED</div>}
+                    <div className="plan-icon-wrap" style={{ background: config.bg, border: `1px solid ${config.border}` }}>
+                      <Icon size={22} style={{ color: config.color }} />
+                    </div>
+                    <h3 className="plan-name" style={{ color: config.color }}>{config.label}</h3>
+                    <div className="plan-price">{config.price}</div>
 
-.query-form {
-  display: flex;
-  gap: 16px;
-}
+                    <ul className="plan-features">
+                      {features.map((f, i) => (
+                        <li key={i}>
+                          <Check size={13} style={{ color: config.color, flexShrink: 0 }} />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-.input-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  background-color: var(--bg-muted);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0 16px;
-  transition: all 0.2s ease;
-}
+                    <button
+                      className="plan-cta"
+                      style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
+                      onClick={() => upgradeTo(planKey)}
+                      disabled={isActive}
+                    >
+                      {isActive ? '✓ CURRENT PLAN' : (
+                        <><Zap size={14} /> ACTIVATE {config.label.toUpperCase()}</>
+                      )}
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </div>
 
-.input-wrapper:focus-within {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px var(--brand-purple-muted);
-}
+            <p className="modal-disclaimer">
+              ⚡ Demo mode — click any plan to simulate activation. No payment required.
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
-.prompt-symbol {
-  font-family: monospace;
-  color: var(--brand-purple-hover);
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin-right: 12px;
-}
-
-.query-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 1rem;
-  padding: 16px 0;
-  outline: none;
-  font-family: 'Inter', sans-serif;
-}
-
-.query-input::placeholder {
-  color: rgba(255,255,255,0.3);
-}
-
-.submit-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--brand-purple);
-  color: white;
-  font-weight: 600;
-  font-size: 0.9rem;
-  letter-spacing: 1px;
-  padding: 0 24px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: var(--brand-purple-hover);
-}
-
-.submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.loading-state {
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 400px;
-}
-
-.spinner {
-  color: var(--brand-purple-hover);
-  animation: spin 1s linear infinite;
-  margin-bottom: 24px;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.loading-text {
-  font-family: monospace;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  margin-bottom: 16px;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 4px;
-  background-color: var(--bg-muted);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: var(--brand-purple-hover);
-  width: 30%;
-  animation: load 2s ease-in-out infinite alternate;
-}
-
-@keyframes load {
-  from { width: 10%; transform: translateX(0); }
-  to { width: 40%; transform: translateX(150px); }
-}
-
-.intelligence-report {
-  color: var(--text-primary);
-  line-height: 1.7;
-}
+export default UpgradeModal;
