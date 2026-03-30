@@ -16,8 +16,8 @@ const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || 'nvapi-cOjUwQv9Xmx6XCt4cOSn
 app.use(cors());
 app.use(express.json());
 
-console.log('🚀 Backend starting...');
-console.log(`API Key loaded: ${NVIDIA_API_KEY ? '✓' : '✗'}`);
+console.log('ðŸš€ Backend starting...');
+console.log(`API Key loaded: ${NVIDIA_API_KEY ? 'âœ“' : 'âœ—'}`);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -37,7 +37,7 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    console.log(`\n📊 New Request:`);
+    console.log(`\nðŸ“Š New Request:`);
     console.log(`Query: ${query.substring(0, 50)}...`);
     console.log(`Mode: ${mode || 'debate'}`);
     console.log(`Perspective: ${perspective || 'neutral'}`);
@@ -80,7 +80,7 @@ Return ONLY valid JSON (no markdown wrapper, no code blocks) with these fields:
 
 Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline, conclusion`;
 
-    console.log('🌐 Calling NVIDIA API...');
+    console.log('ðŸŒ Calling NVIDIA API...');
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
@@ -104,7 +104,7 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error(`❌ NVIDIA API Error ${response.status}:`, errorData);
+      console.error(`âŒ NVIDIA API Error ${response.status}:`, errorData);
       return res.status(response.status).json({
         error: `NVIDIA API Error: ${response.status}`,
         details: errorData,
@@ -115,7 +115,7 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
     const data = await response.json();
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('❌ Invalid response structure from NVIDIA API');
+      console.error('âŒ Invalid response structure from NVIDIA API');
       return res.status(500).json({
         error: 'Invalid API response structure',
         received: data
@@ -123,7 +123,7 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
     }
 
     const content = data.choices[0].message.content;
-    console.log(`✅ Got response (${content.length} chars)`);
+    console.log(`âœ… Got response (${content.length} chars)`);
 
     // Parse JSON from response
     let parsedData;
@@ -132,13 +132,13 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0]);
-        console.log('✅ JSON parsed successfully');
+        console.log('âœ… JSON parsed successfully');
       } else {
         parsedData = JSON.parse(content);
-        console.log('✅ Content parsed as JSON');
+        console.log('âœ… Content parsed as JSON');
       }
     } catch (parseError) {
-      console.warn('⚠️ JSON parse failed, using content as fallback');
+      console.warn('âš ï¸ JSON parse failed, using content as fallback');
       parsedData = {
         affirmative: [content.substring(0, 300)],
         negative: [],
@@ -149,7 +149,7 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
       };
     }
 
-    console.log(`✅ Analysis complete - sending response\n`);
+    console.log(`âœ… Analysis complete - sending response\n`);
 
     res.json({
       success: true,
@@ -159,13 +159,74 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
     });
 
   } catch (error) {
-    console.error(`\n❌ Server Error: ${error.message}`);
+    console.error(`\nâŒ Server Error: ${error.message}`);
     console.error('Stack:', error.stack);
     res.status(500).json({
       error: 'Server error',
       message: error.message,
       type: error.constructor.name
     });
+  }
+});
+
+// PERSISTENCE ENDPOINTS
+// Save a new briefing
+app.post('/api/save-briefing', async (req, res) => {
+  try {
+    const { query, mode, perspective, report, dominanceScore, biasLevel, winProbability } = req.body;
+    
+    const { data, error } = await supabase
+      .from('debates')
+      .insert([
+        {
+          topic: query,
+          side: perspective,
+          response: { 
+            mode: mode || 'DEBATE',
+            report, 
+            dominanceScore, 
+            biasLevel, 
+            winProbability 
+          }
+        }
+      ])
+      .select();
+
+    if (error) throw error;
+    res.json({ success: true, data: data[0] });
+  } catch (error) {
+    console.error('âŒ Save Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fetch intelligence history
+app.get('/api/history', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('debates')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Transform for frontend
+    const history = data.map(item => ({
+      id: item.id,
+      query: item.topic,
+      perspective: item.side,
+      mode: item.response.mode || 'DEBATE',
+      report: item.response.report,
+      dominanceScore: item.response.dominanceScore || 5,
+      biasLevel: item.response.biasLevel || 'Low',
+      winProbability: item.response.winProbability || '50%',
+      timestamp: item.created_at
+    }));
+
+    res.json({ success: true, history });
+  } catch (error) {
+    console.error('âŒ Fetch Error:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -177,11 +238,11 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log('\n' + '='.repeat(60));
-  console.log('🚀 POLITICAL INTELLIGENCE BACKEND');
+  console.log('ðŸš€ POLITICAL INTELLIGENCE BACKEND');
   console.log('='.repeat(60));
-  console.log(`✅ Server running on: http://localhost:${PORT}`);
-  console.log(`📊 API endpoint:     POST /api/analyze`);
-  console.log(`🏥 Health check:     GET /health`);
+  console.log(`âœ… Server running on: http://localhost:${PORT}`);
+  console.log(`ðŸ“Š API endpoint:     POST /api/analyze`);
+  console.log(`ðŸ¥ Health check:     GET /health`);
   console.log('='.repeat(60));
   console.log('Waiting for requests...\n');
 });
