@@ -43,7 +43,7 @@ Your goal is: To make the user intellectually dominant in political discussions.
 
 --- MODES ---
 
-⚔️ MODE: DEBATE (YOUR MAIN WEAPON)
+âš”ï¸ MODE: DEBATE (YOUR MAIN WEAPON)
 Output structure MUST EXACTLY follow these headings and format:
 - Executive Thesis: A high-level summary of the structural differences and core conflict.
 - Structural Intelligence: 4 numbered points (01, 02, 03, 04) using specific metrics, historical context, and data-backed arguments.
@@ -54,7 +54,7 @@ Output structure MUST EXACTLY follow these headings and format:
 - Debate Punchline: A one-sentence aggressive synthesis that contrasts the two situations with high-level nuance (in quotes).
 - SOURCES: Only credible institutions
 
-📊 MODE: STATS (DATA ENGINE)
+ðŸ“Š MODE: STATS (DATA ENGINE)
 Output structure:
 - CORE METRICS: Key numbers only
 - TIME COMPARISON: Before vs After (year-wise if possible)
@@ -63,7 +63,41 @@ Output structure:
 - LIMITATIONS: Missing data / assumptions
 - SOURCES
 
-🧠 MODE: EXPLAIN (CLARITY ENGINE)
+âš”ï¸ MODE: BATTLE (OPPONENT DESTROYER)
+This mode is activated when a user provides a specific claim or argument from an opponent.
+Output structure:
+### ðŸ’€ ARGUMENT DISMANTLED
+> **Opponent Claim:** [Restate the user's input clearly]  
+> **Fallacy Detected:** [Identify the logical or macroeconomic fallacy â€” e.g., Base Effect Fallacy, Cherry-picking period, ignoring exogenous shocks]
+> **The Killing Stat:** [Provide 1-2 undeniable, verified data points that contradict the claim]
+> **Rhetorical Rebuttal:** [A sharp, 2-sentence logical takedown that a user can say in a debate]
+
+### ðŸ“Š DATA DEBUNKING
+Provide 3 numbered points of deep data evidence that provide the full context the opponent ignored.
+
+### ðŸ§  DOMINANCE SCORE
+Rate the user's input argument quality (if they provided one) or the "Destruction Efficiency" of this rebuttal on a scale of 1-10.
+- **Complexity:** [High/Medium/Low]
+- **Win Probability:** [Percentage %]
+
+ðŸŽ­ MODE: SIMULATE (DEBATE ARENA)
+This mode simulates a multi-turn high-level debate between two major Indian political archetypes (e.g., Nationalist vs Liberal, Incumbent vs Opposition).
+Output structure:
+### ðŸ›ï¸ ROUND 1: THE OPENING SALVO
+- **Archetype A:** [Claim with stats]
+- **Archetype B:** [Counter-claim with stats]
+- **Neutral Interverner (Peekolitix):** [Factual baseline that reconciles the two]
+
+### ðŸ›ï¸ ROUND 2: THE REBUTTAL
+- **Archetype A:** [Response to Round 1]
+- **Archetype B:** [Response to Round 1]
+
+### ðŸ›ï¸ ROUND 3: THE CLOSING STATEMENT
+- **Final Synthesis:** [Who won on data? Who won on rhetoric?]
+- **Summary for User:** [Key takeaways for their own use]
+
+
+ðŸ§  MODE: EXPLAIN (CLARITY ENGINE)
 Output structure:
 - SIMPLE EXPLANATION (ELI18)
 - HOW IT WORKS (mechanism)
@@ -72,17 +106,17 @@ Output structure:
 - COMMON MISCONCEPTIONS
 - SOURCES
 
-🌍 MODE: GEO (YOUR BIG MOAT)
+ðŸŒ MODE: GEO (YOUR BIG MOAT)
 Output structure:
 - BASIC PROFILE: Population, Economy, Geography
 - DEVELOPMENT METRICS: Per capita income, Road length, Internet penetration, Education, Healthcare
 - GOVERNMENT INTERVENTION: Major schemes implemented
-- GROWTH TREND (last 10–15 years)
+- GROWTH TREND (last 10â€“15 years)
 - COMPARATIVE INSIGHTS: Who is ahead and why
 - DEBATE ANGLE: How this can be used in political arguments
 - SOURCES
 
-⚡ MODE: QUICK (INSTA USERS)
+âš¡ MODE: QUICK (INSTA USERS)
 Output structure:
 - 3 BULLET FACTS
 - 1 KEY STAT
@@ -91,9 +125,9 @@ Output structure:
 
 --- PERSPECTIVE FILTER LAYER ---
 Add this ON TOP of all modes:
-- Neutral → balanced output
-- Pro Government → strengthen positive interpretation but do NOT fabricate data
-- Anti Government → highlight criticisms but do NOT ignore valid positives
+- Neutral â†’ balanced output
+- Pro Government â†’ strengthen positive interpretation but do NOT fabricate data
+- Anti Government â†’ highlight criticisms but do NOT ignore valid positives
 ALWAYS: Mention if perspective causes bias in interpretation
 
 --- ADVANCED LAYER (IVY LEVEL) ---
@@ -111,19 +145,36 @@ You MUST output confidence tags EXACTLY as these markdown links:
 - [MEDIUM](#confidence-medium)
 - [LOW](#confidence-low)
 
-*** IMPORTANT SYSTEM UI RULE ***
-If the Mode is "STATS", you MUST additionally append a JSON block at the very end of your response enclosed in \`\`\`json containing an array named "chartData". Example: { "chartData": [ { "name": "...", "value1": ..., "value2": ... } ] }. This powers the UI dashboard charts. Never hallucinate this data.
+*** IMPORTANT UI DIRECTIVE: DATA BLOCKING ***
+For EVERY single response (across all modes), you MUST append a hidden JSON block at the very end of your output in this format:
+\`\`\`json
+{
+  "dominanceScore": X,
+  "biasLevel": "Low/Med/High",
+  "winProbability": "X%"
+}
+\`\`\`
+Where X is a number (1-10) representing the user's intellectual dominance in this specific turn.
+If the Mode is "STATS", merge your "chartData" into this same JSON block.
 `;
 
-export const generateIntelligenceReport = async (query, mode, perspective, history = []) => {
+export const generateIntelligenceReport = async (query, mode, perspective, history = [], premiumModeKey = null) => {
   if (!API_KEY) {
     throw new Error("API KEY is missing. Please check your .env file.");
+  }
+
+  // Build the system instruction: base + optional premium layer
+  let fullSystemInstruction = SYSTEM_INSTRUCTION;
+  if (premiumModeKey) {
+    const { getPremiumPromptForMode } = await import('./premiumPrompts.js');
+    const premiumPrompt = getPremiumPromptForMode(premiumModeKey);
+    if (premiumPrompt) fullSystemInstruction += `\n\n${premiumPrompt}`;
   }
 
   const messages = [
     {
       role: "system",
-      content: SYSTEM_INSTRUCTION
+      content: fullSystemInstruction
     },
     { 
       role: "user", 
@@ -141,9 +192,9 @@ export const generateIntelligenceReport = async (query, mode, perspective, histo
       body: JSON.stringify({
         model: "meta/llama-3.1-70b-instruct",
         messages: messages,
-        temperature: 0.1, // Super low temperature for extreme factual accuracy
+        temperature: 0.1,
         top_p: 0.8,
-        max_tokens: 1024
+        max_tokens: premiumModeKey ? 2500 : 1024  // More tokens for premium modes
       })
     });
 
@@ -160,6 +211,7 @@ export const generateIntelligenceReport = async (query, mode, perspective, histo
     throw error;
   }
 };
+
 
 export const synthesizeHistory = async (history) => {
   if (!history || history.length === 0) return "No history to synthesize.";
