@@ -1,222 +1,114 @@
-.sidebar {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border-color);
-  position: relative;
-  z-index: 5;
-}
+import React from 'react';
+import './RightPanel.css';
+import { Target, TrendingUp, ShieldAlert, Award } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-.sidebar-toggle {
-  position: absolute;
-  top: 15px;
-  right: -13px;
-  width: 26px;
-  height: 26px;
-  background-color: var(--bg-muted);
-  border: 1px solid var(--border-color);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 10;
-  color: var(--text-muted);
-  transition: all 0.2s ease;
-  /* Ensure it's not clipped by any parent */
-  clip-path: none;
-}
+const RightPanel = ({ history = [] }) => {
+  // Extract data for chart
+  const chartData = history.map((h, i) => ({
+    name: `T${i + 1}`,
+    score: h.dominanceScore || 5,
+    query: h.query.substring(0, 15) + '...'
+  }));
 
-.sidebar-toggle:hover {
-  background-color: var(--brand-purple);
-  color: white;
-  border-color: var(--brand-purple);
-}
+  const lastEntry = history.length > 0 ? history[history.length - 1] : null;
+  const avgScore = history.length > 0 
+    ? (history.reduce((acc, curr) => acc + (curr.dominanceScore || 5), 0) / history.length).toFixed(1)
+    : 0;
 
-.sidebar-section {
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-}
+  const getRank = (score) => {
+    if (score === 0) return "UNRANKED";
+    if (score < 4) return "ROOKIE ANALYST";
+    if (score < 7) return "FIELD STRATEGIST";
+    if (score < 9) return "DEBATE ARCHITECT";
+    return "WAR ROOM KING";
+  };
 
-.h-full {
-  flex: 1;
-}
+  return (
+    <aside className="right-panel glass-panel">
+      <div className="panel-section">
+        <h3 className="panel-title">
+          <Award size={16} className="text-accent" />
+          INTELLIGENCE RANKING
+        </h3>
+        <div className="rank-card">
+          <div className="rank-main">
+            <span className="rank-label">CURRENT STATUS</span>
+            <h2 className="rank-value">{getRank(avgScore)}</h2>
+          </div>
+          <div className="rank-stats">
+            <div className="stat-item">
+              <span className="stat-label">AVG SCORE</span>
+              <span className="stat-num">{avgScore}/10</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">TURNS</span>
+              <span className="stat-num">{history.length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-.section-title {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
-  font-weight: 600;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+      <div className="panel-separator"></div>
 
-.collapsed-icon {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-  color: var(--text-muted);
-}
+      <div className="panel-section flex-1">
+        <h3 className="panel-title">
+          <TrendingUp size={16} style={{ color: '#00d4ff' }} />
+          DOMINANCE TREND
+        </h3>
+        <div className="chart-container">
+          {history.length < 2 ? (
+            <div className="empty-chart">
+              <Target size={32} className="pulse" />
+              <p>Gathering intelligence to build your combat profile...</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2833" vertical={false} />
+                <XAxis dataKey="name" stroke="#adb5bd" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 10]} hide />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#13151c', border: '1px solid rgba(199,125,255,0.3)', borderRadius: '8px' }}
+                  itemStyle={{ color: '#c77dff' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#c77dff" 
+                  strokeWidth={3} 
+                  dot={{ fill: '#c77dff', r: 4 }} 
+                  activeDot={{ r: 6, stroke: '#fff' }}
+                  animationDuration={1500}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
 
-.nav-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+      <div className="panel-separator"></div>
 
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
+      <div className="panel-section">
+        <h3 className="panel-title">
+          <ShieldAlert size={16} style={{ color: lastEntry?.biasLevel === 'High' ? '#ff4d4d' : '#38b000' }} />
+          LAST ENGAGEMENT
+        </h3>
+        <div className="stats-box">
+          <div className="grid-stat">
+            <span className="grid-label">BIAS DETECTED</span>
+            <span className={`grid-value ${lastEntry?.biasLevel === 'High' ? 'text-danger' : 'text-success'}`}>
+              {lastEntry?.biasLevel || 'N/A'}
+            </span>
+          </div>
+          <div className="grid-stat">
+            <span className="grid-label">WIN PROBABILITY</span>
+            <span className="grid-value text-accent">{lastEntry?.winProbability || '0%'}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+};
 
-.nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-}
-
-.nav-item.active {
-  background-color: var(--brand-purple-muted);
-  color: var(--brand-purple-hover);
-  border: 1px solid rgba(157, 78, 221, 0.3);
-}
-
-.synthesize-btn {
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background-color: var(--bg-surface);
-  color: var(--brand-purple-hover);
-  border: 1px dashed var(--brand-purple-hover);
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.synthesize-btn:hover {
-  background-color: rgba(157, 78, 221, 0.1);
-}
-
-.active-icon {
-  color: var(--brand-purple-hover);
-}
-
-.sidebar.collapsed .nav-item {
-  justify-content: center;
-  padding: 12px 0;
-}
-
-.sidebar-separator {
-  height: 1px;
-  background-color: var(--border-color);
-  margin: 0 16px;
-}
-
-.briefing-list {
-  overflow-y: auto;
-  max-height: 180px;
-}
-
-.briefing-item {
-  font-size: 0.85rem;
-}
-
-.truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 170px;
-}
-
-/* Tier Badge */
-.tier-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 16px 16px 0;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tier-upgrade-hint {
-  margin-left: auto;
-  font-size: 0.7rem;
-  opacity: 0.7;
-}
-
-/* Premium Nav Items */
-.premium-nav-item {
-  border: 1px solid transparent;
-}
-
-.premium-nav-item:not(.premium-locked):hover,
-.premium-nav-item.active {
-  background-color: rgba(var(--pm-color, 255,255,255), 0.08) !important;
-  color: var(--pm-color, var(--text-primary)) !important;
-  border-color: var(--pm-border, transparent) !important;
-}
-
-.premium-locked {
-  opacity: 0.5;
-  border-style: dashed !important;
-}
-
-.lock-icon {
-  margin-left: auto;
-  opacity: 0.5;
-}
-
-.nav-item.locked {
-  opacity: 0.5;
-  cursor: pointer;
-}
-
-/* Upgrade CTA in sidebar */
-.upgrade-sidebar-btn {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  width: 100%;
-  padding: 10px 12px;
-  background: linear-gradient(135deg, rgba(123,44,191,0.3), rgba(199,125,255,0.2));
-  border: 1px solid rgba(199,125,255,0.5);
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  color: #c77dff;
-  cursor: pointer;
-  transition: all 0.25s;
-}
-
-.upgrade-sidebar-btn:hover {
-  background: linear-gradient(135deg, rgba(123,44,191,0.5), rgba(199,125,255,0.35));
-  box-shadow: 0 0 16px rgba(199,125,255,0.3);
-  transform: translateY(-1px);
-}
-
+export default RightPanel;
