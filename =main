@@ -1,110 +1,33 @@
-.report-view {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.chart-container {
-  padding: 24px;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.2);
-  border: 1px solid var(--border-color);
-  margin-bottom: 16px;
-}
-
-.chart-title {
-  font-size: 0.8rem;
-  letter-spacing: 2px;
-  color: var(--text-muted);
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.markdown-content {
-  color: var(--text-primary);
-  line-height: 1.7;
-  font-size: 0.95rem;
-}
-
-.markdown-content h1, 
-.markdown-content h2, 
-.markdown-content h3 {
-  color: var(--text-primary);
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.markdown-content h1 { font-size: 1.8rem; }
-.markdown-content h2 { font-size: 1.4rem; color: var(--brand-purple-hover); }
-.markdown-content h3 { font-size: 1.1rem; }
-
-.markdown-content p {
-  margin-bottom: 1em;
-}
-
-.markdown-content ul, 
-.markdown-content ol {
-  margin-bottom: 1em;
-  padding-left: 24px;
-}
-
-.markdown-content li {
-  margin-bottom: 0.5em;
-}
-
-.markdown-content li::marker {
-  color: var(--brand-purple);
-}
-
-.markdown-content strong {
-  color: #fff;
-}
-
-.markdown-content blockquote {
-  border-left: 3px solid #fb8500;
-  border-top: 1px solid rgba(251, 133, 0, 0.2);
-  border-right: 1px solid rgba(251, 133, 0, 0.2);
-  border-bottom: 1px solid rgba(251, 133, 0, 0.2);
-  background: rgba(251, 133, 0, 0.05);
-  margin-left: 0;
-  margin-right: 0;
-  margin-bottom: 24px;
-  color: var(--text-muted);
-  font-style: italic;
-  padding: 16px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.markdown-content blockquote strong {
-  color: #ffb703; /* Gold accent for "Argument:" and "Flaw:" text */
-  font-style: normal;
-  font-size: 0.95em;
-  letter-spacing: 0.5px;
-  display: inline-block;
-  margin-bottom: 4px;
-}
-
-/* Confidence Tags */
-.conf-high {
-  color: #38b000;
-  font-weight: bold;
-  font-size: 0.85em;
-  letter-spacing: 1px;
-}
-.conf-medium {
-  color: #ffd166;
-  font-weight: bold;
-  font-size: 0.85em;
-  letter-spacing: 1px;
-}
-.conf-low {
-  color: #ef476f;
-  font-weight: bold;
-  font-size: 0.85em;
-  letter-spacing: 1px;
+{
+  "name": "peekolitix",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.8.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "vite": "^8.0.1"
+  }
 }
