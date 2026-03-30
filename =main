@@ -1,157 +1,101 @@
-.right-panel {
-  width: 320px;
-  height: 100%;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  border-left: 1px solid var(--border-color);
-  background: var(--bg-panel);
-}
+import React, { useState } from 'react';
+import './BriefingArea.css';
+import PerspectiveFilter from './PerspectiveFilter';
+import PremiumGate from './PremiumGate';
+import { Terminal, Send, Search, Loader2 } from 'lucide-react';
 
-.panel-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuerySubmit, isLoading, intelligenceData, premiumGates = [] }) => {
+  const [query, setQuery] = useState('');
 
-.panel-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (query.trim() && !isLoading) {
+      onQuerySubmit(query);
+      setQuery('');
+    }
+  };
 
-.panel-separator {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-}
+  const getModeTitle = () => {
+    switch (currentMode) {
+      case 'DEBATE': return 'PRO/CON DEBATE ANALYSIS';
+      case 'STATS': return 'NUMERICAL DATA & TRENDS';
+      case 'EXPLAIN': return 'POLICY & BUDGET EXPLANATION';
+      case 'GEO': return 'GLOBAL GEOPOLITICAL IMPACT';
+      case 'QUICK': return 'RAPID RESPONSE BRIEFING';
+      case 'STUDENT_PREMIUM': return '🎓 STUDENT DEBATE PACK';
+      case 'JOURNALIST_PREMIUM': return '📰 JOURNALIST SOURCE ENGINE';
+      case 'CONSULTANT_PREMIUM': return '🏛️ WAR ROOM INTELLIGENCE';
+      case 'BATTLE': return '⚔️ BATTLE MODE: OPPONENT DESTROYER';
+      case 'SIMULATE': return '🎭 DEBATE ARENA: AI SIMULATION';
+      default: return 'INTELLIGENCE BRIEFING';
+    }
+  };
 
-/* Rank Card */
-.rank-card {
-  background: rgba(199, 125, 255, 0.05); /* Soft branding purple */
-  border: 1px solid rgba(199, 125, 255, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+  const getPlaceholder = () => {
+    if (currentMode === 'BATTLE') return "Paste the opponent's claim/argument here to destroy it...";
+    if (currentMode === 'SIMULATE') return "Describe the debate scenario (e.g., BJP vs Congress on Jobs)...";
+    return `Enter subject for ${getModeTitle()}...`;
+  };
 
-.rank-main {
-  text-align: center;
-}
+  return (
+    <main className="briefing-area">
+      <div className="briefing-header">
+        <div className="mode-badge">
+          <Terminal size={14} />
+          <span>MODE: {getModeTitle()}</span>
+        </div>
+        <PerspectiveFilter 
+          currentPerspective={currentPerspective} 
+          setPerspective={setPerspective} 
+        />
+      </div>
 
-.rank-label {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #adb5bd;
-  letter-spacing: 1px;
-}
+      <div className="briefing-content">
+        {isLoading ? (
+          <div className="loading-state">
+            <Loader2 className="spinner" size={32} />
+            <p className="loading-text">Synthesizing intelligence data from verifiable sources...</p>
+            <div className="progress-bar"><div className="progress-fill"></div></div>
+          </div>
+        ) : intelligenceData ? (
+          <div className="intelligence-report">
+            {intelligenceData}
 
-.rank-value {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #c77dff;
-  margin-top: 4px;
-  letter-spacing: 0.5px;
-}
+            {/* Premium gate sections below free results */}
+            {premiumGates.map(gateKey => (
+              <PremiumGate key={gateKey} modeKey={gateKey} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <Search size={48} className="empty-icon" />
+            <h2>AWAITING QUERY INPUT</h2>
+            <p>Select a mode and perspective, then enter your query below to generate a factual, data-driven report based on verified sources (PIB, Lok Sabha, RBI, NITI Aayog).</p>
+          </div>
+        )}
+      </div>
 
-.rank-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
+      <div className="query-section">
+        <form className="query-form" onSubmit={handleSubmit}>
+          <div className="input-wrapper">
+            <span className="prompt-symbol">&gt;</span>
+            <input 
+              type="text" 
+              className="query-input" 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={getPlaceholder()}
+              disabled={isLoading}
+            />
+          </div>
+          <button type="submit" className="submit-btn" disabled={!query.trim() || isLoading}>
+            <Send size={16} />
+            EXECUTE
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+};
 
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-label {
-  font-size: 0.6rem;
-  color: #adb5bd;
-  font-weight: 700;
-}
-
-.stat-num {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-/* Chart Container */
-.chart-container {
-  height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.empty-chart {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  padding: 20px;
-}
-
-/* Stats Box */
-.stats-box {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: var(--border-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.grid-stat {
-  background: var(--bg-panel);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.grid-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: #6c757d;
-  letter-spacing: 0.5px;
-}
-
-.grid-value {
-  font-size: 0.85rem;
-  font-weight: 800;
-}
-
-.text-danger { color: #ff4d4d; }
-.text-success { color: #38b000; }
-.text-accent { color: #c77dff; }
-
-/* Animations */
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 0.5; }
-}
-
-.pulse {
-  animation: pulse 2s infinite ease-in-out;
-  color: #c77dff;
-}
-
-.flex-1 { flex: 1; }
+export default BriefingArea;
