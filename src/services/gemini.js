@@ -22,7 +22,7 @@ RULES:
 OUTPUT STYLE:
 - Structured, Numbered points, Clear headings
 - Debate-ready, No fluff
-- Use blockquotes (\`>\`) specifically for Argument/Flaw pairs to create beautiful UI cards.
+- Use blockquotes ('>') specifically for Argument/Flaw pairs to create beautiful UI cards.
 
 ADVANCED RESEARCH & LEXICON DIRECTIVE:
 - When dealing with economics, use precise, advanced institutional terminology (e.g., "Macroeconomic Vulnerability Index", "Twin Balance Sheet problem", "Incremental Capital Output Ratio (ICOR)", "Fragile Five", "NPA crisis", "Base Effect").
@@ -159,96 +159,62 @@ If the Mode is "STATS", merge your "chartData" into this same JSON block.
 `;
 
 export const generateIntelligenceReport = async (query, mode, perspective, history = [], premiumModeKey = null) => {
-  if (!API_KEY) {
-    throw new Error("API KEY is missing. Please check your .env file.");
-  }
-
-  // Build the system instruction: base + optional premium layer
-  let fullSystemInstruction = SYSTEM_INSTRUCTION;
-  if (premiumModeKey) {
-    const { getPremiumPromptForMode } = await import('./premiumPrompts.js');
-    const premiumPrompt = getPremiumPromptForMode(premiumModeKey);
-    if (premiumPrompt) fullSystemInstruction += `\n\n${premiumPrompt}`;
-  }
-
-  const messages = [
-    {
-      role: "system",
-      content: fullSystemInstruction
-    },
-    { 
-      role: "user", 
-      content: `${history.length > 0 ? `--- PREVIOUS SESSION HISTORY ---\n${history.map((h, i) => `[Turn ${i+1}] Query: ${h.query} | Mode: ${h.mode} | Perspective: ${h.perspective}`).join('\n')}\n\n` : ''}--- CURRENT TARGET ANALYSIS ---\nMode: ${mode}\nPerspective: ${perspective}\nUser Query: ${query}`
-    }
-  ];
-  
   try {
-    const response = await fetch("/api/nvidia/v1/chat/completions", {
+    const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        "Authorization": `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
         model: "meta/llama-3.1-70b-instruct",
-        messages: messages,
-        temperature: 0.1,
-        top_p: 0.8,
-        max_tokens: premiumModeKey ? 2500 : 1024  // More tokens for premium modes
-      })
+        messages: [
+          { role: "system", content: SYSTEM_INSTRUCTION },
+          ...history.map(h => ({ role: "assistant", content: h.report || '' })),
+          { role: "user", content: `Analyze the following: "${query}" in MODE: ${mode} with PERSPECTIVE: ${perspective}. 
+          ${premiumModeKey ? `Apply premium layer: ${premiumModeKey}` : ''}` }
+        ],
+        temperature: 0.6,
+        top_p: 0.7,
+        max_tokens: 2048,
+      }),
     });
 
+    const data = await response.json();
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const exactError = errorData?.error?.message || errorData?.detail || JSON.stringify(errorData);
-      throw new Error(`API Error ${response.status}: ${exactError}`);
+      throw new Error(data.error?.message || "NVIDIA Intelligence Engine Error");
     }
 
-    const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error("Error generating report:", error);
+    console.error("AI Generation Error:", error);
     throw error;
   }
 };
 
-
 export const synthesizeHistory = async (history) => {
-  if (!history || history.length === 0) return "No history to synthesize.";
-  
-  const messages = [
-    {
-      role: "user",
-      content: `SYSTEM INSTRUCTION: You are Peekolitix. Synthesize the provided history of queries and responses into a single, cohesive, high-level intelligence report. Highlight the main themes, contradictory datapoints, and an overall conclusion using the advanced FACT vs NARRATIVE split format.\n\nPlease synthesize the following intelligence session history:\n${history.map((h, i) => `--- Turn ${i+1} ---\nQuery: ${h.query}\nMode: ${h.mode}\n---`).join('\n')}\n\nGenerate a comprehensive "Combined History Report".`
-    }
-  ];
-
   try {
-    const response = await fetch("/api/nvidia/v1/chat/completions", {
+    const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        "Authorization": `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
         model: "meta/llama-3.1-70b-instruct",
-        messages: messages,
-        temperature: 0.3,
-        top_p: 0.7,
-        max_tokens: 1024
-      })
+        messages: [
+          { role: "system", content: "You are an intelligence synthesizer. Combine the following briefing history into one mega-report." },
+          { role: "user", content: JSON.stringify(history) }
+        ],
+        temperature: 0.5,
+        max_tokens: 2000,
+      }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const exactError = errorData?.error?.message || errorData?.detail || JSON.stringify(errorData);
-      throw new Error(`API Error ${response.status}: ${exactError}`);
-    }
 
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error("Error synthesizing history:", error);
+    console.error("Synthesis Error:", error);
     throw error;
   }
 };
