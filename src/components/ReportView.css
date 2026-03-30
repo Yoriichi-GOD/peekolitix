@@ -1,3 +1,33 @@
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.export-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: #adb5bd;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  background: #c77dff;
+  color: white;
+  border-color: #c77dff;
+  box-shadow: 0 0 15px rgba(199, 125, 255, 0.4);
+}
+
 .report-view {
   display: flex;
   flex-direction: column;

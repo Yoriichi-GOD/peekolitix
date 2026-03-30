@@ -85,12 +85,15 @@ function AppInner() {
         }
       } catch (e) { console.error("Score parsing error", e); }
 
+      // Clean the markdown for display (Remove the hidden JSON block)
+      const cleanMarkdown = markdownRes.replace(/```json\n?([\s\S]*?)\n?```/g, '').trim();
+
       const newEntry = { 
         id: Date.now(), 
         query, 
         mode: currentMode, 
         perspective: currentPerspective, 
-        report: markdownRes,
+        report: cleanMarkdown,
         ...dominanceData
       };
       
@@ -104,20 +107,20 @@ function AppInner() {
           query,
           mode: currentMode,
           perspective: currentPerspective,
-          report: markdownRes,
+          report: cleanMarkdown,
           ...dominanceData
         })
       }).catch(err => console.error("Supabase sync failed", err));
       
       let reportEl;
       if (currentMode === 'SIMULATE') {
-        reportEl = <SimulateView markdownContent={markdownRes} />;
+        reportEl = <SimulateView markdownContent={cleanMarkdown} />;
       } else if (currentMode === 'VERIFY') {
-        reportEl = <VerifyView markdownContent={markdownRes} />;
+        reportEl = <VerifyView markdownContent={cleanMarkdown} />;
       } else if (currentMode === 'COMPARE') {
-        reportEl = <CompareView markdownContent={markdownRes} />;
+        reportEl = <CompareView markdownContent={cleanMarkdown} />;
       } else {
-        reportEl = <ReportView markdownContent={markdownRes} />;
+        reportEl = <ReportView markdownContent={cleanMarkdown} />;
       }
 
       setIntelligenceData(
