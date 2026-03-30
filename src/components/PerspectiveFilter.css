@@ -1,0 +1,57 @@
+.perspective-filter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: var(--bg-muted);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  background-color: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+.filter-btn.active.neutral {
+  background-color: rgba(142, 202, 230, 0.15);
+  color: var(--status-neutral);
+  border-color: rgba(142, 202, 230, 0.3);
+}
+
+.filter-btn.active.pro {
+  background-color: rgba(56, 176, 0, 0.15);
+  color: var(--status-pro);
+  border-color: rgba(56, 176, 0, 0.3);
+}
+
+.filter-btn.active.anti {
+  background-color: rgba(208, 0, 0, 0.15);
+  color: var(--status-anti);
+  border-color: rgba(208, 0, 0, 0.3);
+}
