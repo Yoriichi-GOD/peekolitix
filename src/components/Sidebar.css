@@ -1,0 +1,145 @@
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 15px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  background-color: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--brand-purple);
+  color: white;
+  border-color: var(--brand-purple);
+}
+
+.sidebar-section {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.h-full {
+  flex: 1;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collapsed-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background-color: var(--brand-purple-muted);
+  color: var(--brand-purple-hover);
+  border: 1px solid rgba(157, 78, 221, 0.3);
+}
+
+.synthesize-btn {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-surface);
+  color: var(--brand-purple-hover);
+  border: 1px dashed var(--brand-purple-hover);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.synthesize-btn:hover {
+  background-color: rgba(157, 78, 221, 0.1);
+}
+
+.active-icon {
+  color: var(--brand-purple-hover);
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar-separator {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0 16px;
+}
+
+.briefing-list {
+  overflow-y: auto;
+}
+
+.briefing-item {
+  font-size: 0.85rem;
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
