@@ -83,8 +83,13 @@ function AppInner() {
         }
       } catch (e) { console.error("Score parsing error", e); }
 
-      // Clean the markdown for display (Remove the hidden JSON block)
-      const cleanMarkdown = markdownRes.replace(/```json\n?([\s\S]*?)\n?```/g, '').trim();
+      // Clean the markdown for display (Aggressive Sanitization)
+      const cleanMarkdown = markdownRes
+        .replace(/```json\n?([\s\S]*?)\n?```/g, '') // Remove code blocks
+        .replace(/JSON BLOCK:?/gi, '')              // Remove literal labels
+        .replace(/PREMIUM LAYER:?/gi, '')           // Remove tier labels
+        .replace(/CONSULTANT_PREMIUM:?/gi, '')      // Remove tier keys
+        .trim();
 
       const newEntry = { 
         id: Date.now(), 
