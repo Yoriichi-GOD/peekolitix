@@ -1,54 +1,110 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './RightPanel.css';
-import { Lightbulb, CalendarDays } from 'lucide-react';
+import { Target, TrendingUp, ShieldAlert, Award } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-const funFacts = [
-  "India's Parliament (Sansad Bhavan) circular shape was inspired by the Chausath Yogini temple in Madhya Pradesh.",
-  "The Rajya Sabha carpet is red (representing royalty and the blood of martyrs), while Lok Sabha's is green (representing agriculture).",
-  "The original Indian Constitution was handwritten by Prem Behari Narain Raizada in a flowing italic style.",
-  "India has the world's largest biometric ID system, Aadhaar, covering over 1.3 billion residents.",
-  "The phrase 'Satyameva Jayate' from the Mundaka Upanishad is inscribed below the State Emblem of India."
-];
+const RightPanel = ({ history = [] }) => {
+  // Extract data for chart
+  const chartData = history.map((h, i) => ({
+    name: `T${i + 1}`,
+    score: h.dominanceScore || 5,
+    query: h.query.substring(0, 15) + '...'
+  }));
 
-const RightPanel = () => {
-  const [factIndex, setFactIndex] = useState(0);
+  const lastEntry = history.length > 0 ? history[history.length - 1] : null;
+  const avgScore = history.length > 0 
+    ? (history.reduce((acc, curr) => acc + (curr.dominanceScore || 5), 0) / history.length).toFixed(1)
+    : 0;
 
-  useEffect(() => {
-    // Rotate facts every 15 seconds
-    const idx = Math.floor(Math.random() * funFacts.length);
-    setFactIndex(idx);
-    const interval = setInterval(() => {
-      setFactIndex((prev) => (prev + 1) % funFacts.length);
-    }, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  const getRank = (score) => {
+    if (score === 0) return "UNRANKED";
+    if (score < 4) return "ROOKIE ANALYST";
+    if (score < 7) return "FIELD STRATEGIST";
+    if (score < 9) return "DEBATE ARCHITECT";
+    return "WAR ROOM KING";
+  };
 
   return (
     <aside className="right-panel glass-panel">
       <div className="panel-section">
         <h3 className="panel-title">
-          <CalendarDays size={16} className="text-accent" />
-          DAILY SUMMARY
+          <Award size={16} className="text-accent" />
+          INTELLIGENCE RANKING
         </h3>
-        <div className="summary-card">
-          <p className="summary-date">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          <ul className="summary-list">
-            <li>Cabinet approves new semiconductor manufacturing policy.</li>
-            <li>Monsoon session of Parliament expected to address 15 new bills.</li>
-            <li>RBI maintains repo rate at 6.5% for the 8th consecutive time.</li>
-          </ul>
+        <div className="rank-card">
+          <div className="rank-main">
+            <span className="rank-label">CURRENT STATUS</span>
+            <h2 className="rank-value">{getRank(avgScore)}</h2>
+          </div>
+          <div className="rank-stats">
+            <div className="stat-item">
+              <span className="stat-label">AVG SCORE</span>
+              <span className="stat-num">{avgScore}/10</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">TURNS</span>
+              <span className="stat-num">{history.length}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="panel-separator"></div>
 
-      <div className="panel-section fact-section flex-1">
+      <div className="panel-section flex-1">
         <h3 className="panel-title">
-          <Lightbulb size={16} className="text-warning" style={{ color: '#ffd166' }} />
-          GEOPOLITICAL FACT
+          <TrendingUp size={16} style={{ color: '#00d4ff' }} />
+          DOMINANCE TREND
         </h3>
-        <div className="fact-card">
-          <p className="fact-text">{funFacts[factIndex]}</p>
+        <div className="chart-container">
+          {history.length < 2 ? (
+            <div className="empty-chart">
+              <Target size={32} className="pulse" />
+              <p>Gathering intelligence to build your combat profile...</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2833" vertical={false} />
+                <XAxis dataKey="name" stroke="#adb5bd" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 10]} hide />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#13151c', border: '1px solid rgba(199,125,255,0.3)', borderRadius: '8px' }}
+                  itemStyle={{ color: '#c77dff' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#c77dff" 
+                  strokeWidth={3} 
+                  dot={{ fill: '#c77dff', r: 4 }} 
+                  activeDot={{ r: 6, stroke: '#fff' }}
+                  animationDuration={1500}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      <div className="panel-separator"></div>
+
+      <div className="panel-section">
+        <h3 className="panel-title">
+          <ShieldAlert size={16} style={{ color: lastEntry?.biasLevel === 'High' ? '#ff4d4d' : '#38b000' }} />
+          LAST ENGAGEMENT
+        </h3>
+        <div className="stats-box">
+          <div className="grid-stat">
+            <span className="grid-label">BIAS DETECTED</span>
+            <span className={`grid-value ${lastEntry?.biasLevel === 'High' ? 'text-danger' : 'text-success'}`}>
+              {lastEntry?.biasLevel || 'N/A'}
+            </span>
+          </div>
+          <div className="grid-stat">
+            <span className="grid-label">WIN PROBABILITY</span>
+            <span className="grid-value text-accent">{lastEntry?.winProbability || '0%'}</span>
+          </div>
         </div>
       </div>
     </aside>
