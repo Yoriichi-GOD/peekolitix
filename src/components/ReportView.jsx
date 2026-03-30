@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { FileDown } from 'lucide-react';
+import { exportToPDF } from '../services/PDFExportService';
 import './ReportView.css';
 
 const ReportView = ({ markdownContent }) => {
@@ -29,8 +31,26 @@ const ReportView = ({ markdownContent }) => {
     return { cleanMarkdown: clean, chartData: data };
   }, [markdownContent]);
 
+  const handleExport = () => {
+    const topicMatch = markdownContent.match(/# (.*)/) || markdownContent.match(/### (.*)/);
+    const topic = topicMatch ? topicMatch[1] : "Strategic Intelligence";
+    
+    exportToPDF(markdownContent, {
+      topic: topic,
+      mode: "WAR ROOM ANALYTICS",
+      perspective: "NEUTRAL"
+    });
+  };
+
   return (
     <div className="report-view">
+      <div className="report-actions">
+        <button className="export-btn" onClick={handleExport} title="Generate White Label PDF">
+          <FileDown size={14} />
+          <span>EXPORT PDF</span>
+        </button>
+      </div>
+
       {chartData && chartData.length > 0 && (
         <div className="chart-container glass-panel">
           <h4 className="chart-title">DATA VISUALIZATION</h4>
