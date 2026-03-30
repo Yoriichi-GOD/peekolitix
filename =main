@@ -1,101 +1,193 @@
-import React, { useState } from 'react';
-import './BriefingArea.css';
-import PerspectiveFilter from './PerspectiveFilter';
-import PremiumGate from './PremiumGate';
-import { Terminal, Send, Search, Loader2 } from 'lucide-react';
+.briefing-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
 
-const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuerySubmit, isLoading, intelligenceData, premiumGates = [] }) => {
-  const [query, setQuery] = useState('');
+.briefing-header {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(11, 12, 16, 0.8);
+}
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (query.trim() && !isLoading) {
-      onQuerySubmit(query);
-      setQuery('');
-    }
-  };
+.mode-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand-purple-hover);
+  background: var(--brand-purple-muted);
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(157, 78, 221, 0.3);
+}
 
-  const getModeTitle = () => {
-    switch (currentMode) {
-      case 'DEBATE': return 'PRO/CON DEBATE ANALYSIS';
-      case 'STATS': return 'NUMERICAL DATA & TRENDS';
-      case 'EXPLAIN': return 'POLICY & BUDGET EXPLANATION';
-      case 'GEO': return 'GLOBAL GEOPOLITICAL IMPACT';
-      case 'QUICK': return 'RAPID RESPONSE BRIEFING';
-      case 'STUDENT_PREMIUM': return '🎓 STUDENT DEBATE PACK';
-      case 'JOURNALIST_PREMIUM': return '📰 JOURNALIST SOURCE ENGINE';
-      case 'CONSULTANT_PREMIUM': return '🏛️ WAR ROOM INTELLIGENCE';
-      case 'BATTLE': return '⚔️ BATTLE MODE: OPPONENT DESTROYER';
-      case 'SIMULATE': return '🎭 DEBATE ARENA: AI SIMULATION';
-      default: return 'INTELLIGENCE BRIEFING';
-    }
-  };
+.briefing-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
 
-  const getPlaceholder = () => {
-    if (currentMode === 'BATTLE') return "Paste the opponent's claim/argument here to destroy it...";
-    if (currentMode === 'SIMULATE') return "Describe the debate scenario (e.g., BJP vs Congress on Jobs)...";
-    return `Enter subject for ${getModeTitle()}...`;
-  };
+.empty-state {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
 
-  return (
-    <main className="briefing-area">
-      <div className="briefing-header">
-        <div className="mode-badge">
-          <Terminal size={14} />
-          <span>MODE: {getModeTitle()}</span>
-        </div>
-        <PerspectiveFilter 
-          currentPerspective={currentPerspective} 
-          setPerspective={setPerspective} 
-        />
-      </div>
+.empty-icon {
+  margin-bottom: 20px;
+  color: var(--brand-purple);
+  opacity: 0.5;
+}
 
-      <div className="briefing-content">
-        {isLoading ? (
-          <div className="loading-state">
-            <Loader2 className="spinner" size={32} />
-            <p className="loading-text">Synthesizing intelligence data from verifiable sources...</p>
-            <div className="progress-bar"><div className="progress-fill"></div></div>
-          </div>
-        ) : intelligenceData ? (
-          <div className="intelligence-report">
-            {intelligenceData}
+.empty-state h2 {
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
 
-            {/* Premium gate sections below free results */}
-            {premiumGates.map(gateKey => (
-              <PremiumGate key={gateKey} modeKey={gateKey} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <Search size={48} className="empty-icon" />
-            <h2>AWAITING QUERY INPUT</h2>
-            <p>Select a mode and perspective, then enter your query below to generate a factual, data-driven report based on verified sources (PIB, Lok Sabha, RBI, NITI Aayog).</p>
-          </div>
-        )}
-      </div>
+.empty-state p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
 
-      <div className="query-section">
-        <form className="query-form" onSubmit={handleSubmit}>
-          <div className="input-wrapper">
-            <span className="prompt-symbol">&gt;</span>
-            <input 
-              type="text" 
-              className="query-input" 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={getPlaceholder()}
-              disabled={isLoading}
-            />
-          </div>
-          <button type="submit" className="submit-btn" disabled={!query.trim() || isLoading}>
-            <Send size={16} />
-            EXECUTE
-          </button>
-        </form>
-      </div>
-    </main>
-  );
-};
+.query-section {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+}
 
-export default BriefingArea;
+.query-form {
+  display: flex;
+  gap: 16px;
+}
+
+.input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--brand-purple-muted);
+}
+
+.prompt-symbol {
+  font-family: monospace;
+  color: var(--brand-purple-hover);
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-right: 12px;
+}
+
+.query-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: 16px 0;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.query-input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--brand-purple);
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  padding: 0 24px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: var(--brand-purple-hover);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-state {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 400px;
+}
+
+.spinner {
+  color: var(--brand-purple-hover);
+  animation: spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-family: monospace;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: var(--bg-muted);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--brand-purple-hover);
+  width: 30%;
+  animation: load 2s ease-in-out infinite alternate;
+}
+
+@keyframes load {
+  from { width: 10%; transform: translateX(0); }
+  to { width: 40%; transform: translateX(150px); }
+}
+
+.intelligence-report {
+  color: var(--text-primary);
+  line-height: 1.7;
+}
