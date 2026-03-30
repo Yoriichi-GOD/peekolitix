@@ -1,107 +1,88 @@
-import React from 'react';
-import { Lock, Zap } from 'lucide-react';
-import { usePremium } from '../context/PremiumContext';
-import { motion } from 'framer-motion';
-import './PremiumGate.css';
+.premium-gate {
+  border: 1px solid var(--gate-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 24px;
+  background: var(--gate-bg);
+}
 
-const GATE_CONFIG = {
-  STUDENT_PREMIUM: {
-    title: 'Student Debate Pack',
-    tier: 'STUDENT',
-    color: '#38b000',
-    border: 'rgba(56,176,0,0.3)',
-    bg: 'rgba(56,176,0,0.08)',
-    preview: `### 🎯 ARGUMENT EVALUATOR
-- **Logic:** 8/10 — Strong structural argument with clear premise
-- **Evidence:** 6/10 — Some data cited; needs more sourcing
-- **Persuasion:** 7/10 — Effective framing, weak closing
-- **Overall Debate Score:** 7/10
+.gate-preview-wrap {
+  position: relative;
+  max-height: 160px;
+  overflow: hidden;
+}
 
-### ⚔️ COUNTER-ARGUMENT GENERATOR
-> **Counter 1:** The GDP growth figures cited ignore the base effect of FY21 contraction...
+.gate-preview-content {
+  padding: 20px;
+}
 
-### 📝 EXAM-READY SUMMARY (ELI18)
-India's fiscal policy has shifted from consumption to investment-led growth since 2016...`,
-  },
-  JOURNALIST_PREMIUM: {
-    title: 'Journalist Intelligence Pack',
-    tier: 'JOURNALIST',
-    color: '#f4a261',
-    border: 'rgba(244,162,97,0.3)',
-    bg: 'rgba(244,162,97,0.08)',
-    preview: `### 📋 RTI ANGLE
-> **RTI to:** Ministry of Finance  
-> **Ask for:** District-wise MGNREGS fund utilization FY23-24
+.gate-preview-text {
+  font-family: 'Inter', monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  line-height: 1.6;
+  filter: blur(1.5px);
+  user-select: none;
+}
 
-### 🕐 POLICY TIMELINE
-**2014:** NDA comes to power, MAKE IN INDIA launched
-**2016:** Demonetization shock to informal economy
-**2020:** COVID lockdown, GDP contracts -6.6%...
+.gate-blur-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 10%, var(--gate-bg, rgba(0,0,0,0.7)) 80%);
+}
 
-### ✍️ ARTICLE OPENER
-"While the government celebrates 8% GDP growth, the 45-year high in unemployment among urban youth tells a different story..."`,
-  },
-  CONSULTANT_PREMIUM: {
-    title: 'War Room Pack',
-    tier: 'CONSULTANT',
-    color: '#c77dff',
-    border: 'rgba(199,125,255,0.3)',
-    bg: 'rgba(199,125,255,0.08)',
-    preview: `### 🏛️ ALLIANCE RISK SCANNER
-- **Coalition Fragility Score:** HIGH
-- **Ideological Fault Lines:** Seat-sharing disputes in UP, Bihar
+.gate-cta-panel {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  border-top: 1px solid var(--gate-border);
+}
 
-### 🗳️ SWING FACTOR ANALYSIS
-> **Factor 1:** Farmer income stagnation in MP, Rajasthan, HP
-> **Impact:** Shifts 8-12% rural votes against incumbent...
+.gate-lock-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gate-bg);
+  border: 1px solid var(--gate-border);
+}
 
-### 🎭 NARRATIVE STRESS TEST
-**Ruling Party says:** "Inflation is under control at 4.7%"
-**Opposition counters:** "Food inflation at 7.6% hits the poor hardest"...`,
-  },
-};
+.gate-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  margin: 0;
+}
 
-const PremiumGate = ({ modeKey }) => {
-  const { openUpgradeModal, TIER_CONFIG, TIERS } = usePremium();
-  const config = GATE_CONFIG[modeKey];
-  if (!config) return null;
+.gate-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 420px;
+  line-height: 1.5;
+}
 
-  const tierConfig = TIER_CONFIG[config.tier ? TIERS[config.tier] : TIERS.STUDENT];
+.gate-cta-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
 
-  return (
-    <motion.div
-      className="premium-gate"
-      style={{ '--gate-color': config.color, '--gate-border': config.border, '--gate-bg': config.bg }}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="gate-preview-wrap">
-        <div className="gate-preview-content">
-          <pre className="gate-preview-text">{config.preview}</pre>
-        </div>
-        <div className="gate-blur-overlay" />
-      </div>
-
-      <div className="gate-cta-panel">
-        <div className="gate-lock-icon">
-          <Lock size={28} style={{ color: config.color }} />
-        </div>
-        <h3 className="gate-title">{config.title}</h3>
-        <p className="gate-subtitle">
-          This section is available on the <strong style={{ color: config.color }}>{config.tier}</strong> plan.
-          Upgrade to unlock the full analysis layer.
-        </p>
-        <button
-          className="gate-cta-btn"
-          style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
-          onClick={() => openUpgradeModal(config.tier === 'CONSULTANT' ? 'CONSULTANT' : config.tier)}
-        >
-          <Zap size={16} /> Unlock {config.title} →
-        </button>
-      </div>
-    </motion.div>
-  );
-};
-
-export default PremiumGate;
+.gate-cta-btn:hover {
+  filter: brightness(1.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--gate-border);
+}
