@@ -1,93 +1,55 @@
-import React, { createContext, useContext, useState } from 'react';
+import React from 'react';
+import './Header.css';
+import { Activity, ShieldCheck, Terminal, Zap } from 'lucide-react';
+import { usePremium, TIERS } from '../context/PremiumContext';
 
-const PremiumContext = createContext(null);
-
-export const TIERS = {
-  FREE: 'FREE',
-  STUDENT: 'STUDENT',
-  JOURNALIST: 'JOURNALIST',
-  CONSULTANT: 'CONSULTANT',
-};
-
-export const TIER_CONFIG = {
-  [TIERS.FREE]: {
-    label: 'Free',
-    color: '#adb5bd',
-    bg: 'rgba(173,181,189,0.15)',
-    border: 'rgba(173,181,189,0.3)',
-    dailyLimit: 15,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','BATTLE'],
-    premiumModes: [],
-  },
-  [TIERS.STUDENT]: {
-    label: 'Student',
-    color: '#38b000',
-    bg: 'rgba(56,176,0,0.15)',
-    border: 'rgba(56,176,0,0.35)',
-    price: '₹49/mo',
-    dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','BATTLE'],
-    premiumModes: ['STUDENT_PREMIUM'],
-  },
-  [TIERS.JOURNALIST]: {
-    label: 'Journalist',
-    color: '#f4a261',
-    bg: 'rgba(244,162,97,0.15)',
-    border: 'rgba(244,162,97,0.35)',
-    price: '₹199/mo',
-    dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','BATTLE','SIMULATE'],
-    premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM'],
-  },
-  [TIERS.CONSULTANT]: {
-    label: 'War Room',
-    color: '#c77dff',
-    bg: 'rgba(199,125,255,0.15)',
-    border: 'rgba(199,125,255,0.35)',
-    price: '₹499/mo',
-    dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK', 'STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM', 'BATTLE', 'SIMULATE'],
-    premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM','CONSULTANT_PREMIUM'],
-  },
-};
-
-export const usePremium = () => useContext(PremiumContext);
-
-export const PremiumProvider = ({ children }) => {
-  const [tier, setTier] = useState(TIERS.FREE);
-  const [queryCount, setQueryCount] = useState(0);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [targetTier, setTargetTier] = useState(null);
-
-  const canQuery = () => {
-    const config = TIER_CONFIG[tier];
-    return queryCount < config.dailyLimit;
-  };
-
-  const incrementQuery = () => setQueryCount(c => c + 1);
-
-  const canAccessMode = (mode) => TIER_CONFIG[tier].modesAllowed.includes(mode);
-
-  const openUpgradeModal = (tier = null) => {
-    setTargetTier(tier);
-    setShowUpgradeModal(true);
-  };
-
-  const closeUpgradeModal = () => setShowUpgradeModal(false);
-
-  const upgradeTo = (newTier) => {
-    setTier(newTier);
-    setQueryCount(0);
-    setShowUpgradeModal(false);
-  };
+const Header = () => {
+  const briefingId = `BRF-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}-${new Date().toISOString().substring(2, 10).replace(/-/g, '')}`;
+  const { tier, openUpgradeModal, TIER_CONFIG, queryCount } = usePremium();
+  const tierConfig = TIER_CONFIG[tier];
 
   return (
-    <PremiumContext.Provider value={{
-      tier, setTier, queryCount, canQuery, incrementQuery,
-      canAccessMode, showUpgradeModal, openUpgradeModal, closeUpgradeModal,
-      upgradeTo, targetTier, TIER_CONFIG, TIERS
-    }}>
-      {children}
-    </PremiumContext.Provider>
+    <header className="app-header glass-panel">
+      <div className="header-left">
+        <div className="logo">
+          <ShieldCheck size={24} className="brand-icon" />
+          <h1>PEEKOLITIX</h1>
+        </div>
+        <div className="status-indicator">
+          <Activity size={16} className="status-icon" />
+          <span>SYSTEM: SECURE & ACTIVE</span>
+        </div>
+      </div>
+      
+      <div className="header-right">
+        {tier === TIERS.FREE && (
+          <div className="query-counter">
+            <span>{15 - queryCount} queries left today</span>
+            <button className="header-upgrade-btn" onClick={() => openUpgradeModal()}>
+              <Zap size={12} /> Upgrade
+            </button>
+          </div>
+        )}
+
+        <div 
+          className="tier-pill"
+          style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, color: tierConfig.color }}
+          onClick={() => openUpgradeModal()}
+        >
+          {tierConfig.label}
+        </div>
+
+        <div className="briefing-info">
+          <Terminal size={14} />
+          <span>SESSION: {briefingId}</span>
+        </div>
+        <div className="user-profile">
+          <div className="avatar" style={{ background: tierConfig.color }}>A</div>
+          <span>Analyst</span>
+        </div>
+      </div>
+    </header>
   );
 };
+
+export default Header;
