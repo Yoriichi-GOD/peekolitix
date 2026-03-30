@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -19,6 +19,8 @@ const PREMIUM_MODE_BASE = {
   CONSULTANT_PREMIUM: 'DEBATE',
 };
 
+const BACKEND_URL = 'http://localhost:3001';
+
 function AppInner() {
   const [currentMode, setMode] = useState('DEBATE');
   const [currentPerspective, setPerspective] = useState('NEUTRAL');
@@ -29,6 +31,22 @@ function AppInner() {
   const { tier, openUpgradeModal, canAccessMode, canQuery, incrementQuery } = usePremium();
 
   const isPremiumMode = (mode) => Object.keys(PREMIUM_MODE_BASE).includes(mode);
+
+  // Persistence: Fetch history on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/history`);
+        const data = await response.json();
+        if (data.success) {
+          setHistory(data.history);
+        }
+      } catch (err) {
+        console.error("Failed to load history from Supabase", err);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   const handleQuerySubmit = async (query) => {
     // Free plan query limit check
@@ -73,7 +91,21 @@ function AppInner() {
         report: markdownRes,
         ...dominanceData
       };
-      setHistory(prev => [...prev, newEntry]); 
+      
+      setHistory(prev => [newEntry, ...prev]); 
+
+      // PERSIST TO SUPABASE
+      fetch(`${BACKEND_URL}/api/save-briefing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          mode: currentMode,
+          perspective: currentPerspective,
+          report: markdownRes,
+          ...dominanceData
+        })
+      }).catch(err => console.error("Supabase sync failed", err));
       
       const reportEl = currentMode === 'SIMULATE' ? (
         <SimulateView markdownContent={markdownRes} />
