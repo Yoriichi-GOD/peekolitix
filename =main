@@ -1,80 +1,110 @@
-import React, { useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import './ReportView.css';
+.report-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-const ReportView = ({ markdownContent }) => {
-  // Extract JSON chart data if it exists
-  const { cleanMarkdown, chartData } = useMemo(() => {
-    let clean = markdownContent;
-    let data = null;
-    
-    // Look for ```json {...} ``` blocks
-    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
-    const match = markdownContent.match(jsonRegex);
-    
-    if (match && match[1]) {
-      try {
-        const parsed = JSON.parse(match[1]);
-        if (parsed.chartData) {
-          data = parsed.chartData;
-          clean = markdownContent.replace(jsonRegex, ''); // Remove JSON from markdown
-        }
-      } catch (err) {
-        console.error("Failed to parse chart JSON from Gemini output:", err);
-      }
-    }
-    
-    return { cleanMarkdown: clean, chartData: data };
-  }, [markdownContent]);
+.chart-container {
+  padding: 24px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
 
-  return (
-    <div className="report-view">
-      {chartData && chartData.length > 0 && (
-        <div className="chart-container glass-panel">
-          <h4 className="chart-title">DATA VISUALIZATION</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-              <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-              <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }}
-                itemStyle={{ color: 'var(--text-primary)' }}
-              />
-              <Legend wrapperStyle={{ fontSize: '12px', color: 'var(--text-muted)' }} />
-              {Object.keys(chartData[0]).filter(k => k !== 'name').map((key, idx) => (
-                <Bar 
-                  key={key} 
-                  dataKey={key} 
-                  fill={idx === 0 ? 'var(--chart-color-1)' : idx === 1 ? 'var(--chart-color-2)' : 'var(--status-neutral)'} 
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={50}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-      
-      <div className="markdown-content">
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm]}
-          components={{
-            a: ({node, href, children, ...props}) => {
-              if (href === '#confidence-high') return <span className="conf-high">{children}</span>;
-              if (href === '#confidence-medium') return <span className="conf-medium">{children}</span>;
-              if (href === '#confidence-low') return <span className="conf-low">{children}</span>;
-              return <a href={href} {...props}>{children}</a>;
-            }
-          }}
-        >
-          {cleanMarkdown}
-        </ReactMarkdown>
-      </div>
-    </div>
-  );
-};
+.chart-title {
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  text-align: center;
+}
 
-export default ReportView;
+.markdown-content {
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3 {
+  color: var(--text-primary);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.markdown-content h1 { font-size: 1.8rem; }
+.markdown-content h2 { font-size: 1.4rem; color: var(--brand-purple-hover); }
+.markdown-content h3 { font-size: 1.1rem; }
+
+.markdown-content p {
+  margin-bottom: 1em;
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+  margin-bottom: 1em;
+  padding-left: 24px;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5em;
+}
+
+.markdown-content li::marker {
+  color: var(--brand-purple);
+}
+
+.markdown-content strong {
+  color: #fff;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid #fb8500;
+  border-top: 1px solid rgba(251, 133, 0, 0.2);
+  border-right: 1px solid rgba(251, 133, 0, 0.2);
+  border-bottom: 1px solid rgba(251, 133, 0, 0.2);
+  background: rgba(251, 133, 0, 0.05);
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 16px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.markdown-content blockquote strong {
+  color: #ffb703; /* Gold accent for "Argument:" and "Flaw:" text */
+  font-style: normal;
+  font-size: 0.95em;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+/* Confidence Tags */
+.conf-high {
+  color: #38b000;
+  font-weight: bold;
+  font-size: 0.85em;
+  letter-spacing: 1px;
+}
+.conf-medium {
+  color: #ffd166;
+  font-weight: bold;
+  font-size: 0.85em;
+  letter-spacing: 1px;
+}
+.conf-low {
+  color: #ef476f;
+  font-weight: bold;
+  font-size: 0.85em;
+  letter-spacing: 1px;
+}
