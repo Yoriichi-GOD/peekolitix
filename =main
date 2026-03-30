@@ -1,194 +1,107 @@
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
+import React from 'react';
+import { Lock, Zap } from 'lucide-react';
+import { usePremium } from '../context/PremiumContext';
+import { motion } from 'framer-motion';
+import './PremiumGate.css';
 
-.modal-container {
-  background: #0f1117;
-  border: 1px solid rgba(199, 125, 255, 0.3);
-  border-radius: 16px;
-  max-width: 960px;
-  width: 100%;
-  padding: 36px;
-  box-shadow: 0 0 60px rgba(123, 44, 191, 0.3), 0 25px 50px rgba(0, 0, 0, 0.5);
-  max-height: 90vh;
-  overflow-y: auto;
-}
+const GATE_CONFIG = {
+  STUDENT_PREMIUM: {
+    title: 'Student Debate Pack',
+    tier: 'STUDENT',
+    color: '#38b000',
+    border: 'rgba(56,176,0,0.3)',
+    bg: 'rgba(56,176,0,0.08)',
+    preview: `### 🎯 ARGUMENT EVALUATOR
+- **Logic:** 8/10 — Strong structural argument with clear premise
+- **Evidence:** 6/10 — Some data cited; needs more sourcing
+- **Persuasion:** 7/10 — Effective framing, weak closing
+- **Overall Debate Score:** 7/10
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
+### ⚔️ COUNTER-ARGUMENT GENERATOR
+> **Counter 1:** The GDP growth figures cited ignore the base effect of FY21 contraction...
 
-.modal-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+### 📝 EXAM-READY SUMMARY (ELI18)
+India's fiscal policy has shifted from consumption to investment-led growth since 2016...`,
+  },
+  JOURNALIST_PREMIUM: {
+    title: 'Journalist Intelligence Pack',
+    tier: 'JOURNALIST',
+    color: '#f4a261',
+    border: 'rgba(244,162,97,0.3)',
+    bg: 'rgba(244,162,97,0.08)',
+    preview: `### 📋 RTI ANGLE
+> **RTI to:** Ministry of Finance  
+> **Ask for:** District-wise MGNREGS fund utilization FY23-24
 
-.modal-title-wrap h2 {
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: var(--text-primary);
-  margin: 0;
-}
+### 🕐 POLICY TIMELINE
+**2014:** NDA comes to power, MAKE IN INDIA launched
+**2016:** Demonetization shock to informal economy
+**2020:** COVID lockdown, GDP contracts -6.6%...
 
-.modal-star {
-  color: #ffd166;
-  animation: pulse 2s infinite;
-}
+### ✍️ ARTICLE OPENER
+"While the government celebrates 8% GDP growth, the 45-year high in unemployment among urban youth tells a different story..."`,
+  },
+  CONSULTANT_PREMIUM: {
+    title: 'War Room Pack',
+    tier: 'CONSULTANT',
+    color: '#c77dff',
+    border: 'rgba(199,125,255,0.3)',
+    bg: 'rgba(199,125,255,0.08)',
+    preview: `### 🏛️ ALLIANCE RISK SCANNER
+- **Coalition Fragility Score:** HIGH
+- **Ideological Fault Lines:** Seat-sharing disputes in UP, Bihar
 
-.modal-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: all 0.2s;
-  border: 1px solid var(--border-color);
-}
+### 🗳️ SWING FACTOR ANALYSIS
+> **Factor 1:** Farmer income stagnation in MP, Rajasthan, HP
+> **Impact:** Shifts 8-12% rural votes against incumbent...
 
-.modal-close:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-primary);
-}
+### 🎭 NARRATIVE STRESS TEST
+**Ruling Party says:** "Inflation is under control at 4.7%"
+**Opposition counters:** "Food inflation at 7.6% hits the poor hardest"...`,
+  },
+};
 
-.modal-subtitle {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-bottom: 32px;
-}
+const PremiumGate = ({ modeKey }) => {
+  const { openUpgradeModal, TIER_CONFIG, TIERS } = usePremium();
+  const config = GATE_CONFIG[modeKey];
+  if (!config) return null;
 
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
+  const tierConfig = TIER_CONFIG[config.tier ? TIERS[config.tier] : TIERS.STUDENT];
 
-@media (max-width: 768px) {
-  .plans-grid {
-    grid-template-columns: 1fr;
-  }
-}
+  return (
+    <motion.div
+      className="premium-gate"
+      style={{ '--gate-color': config.color, '--gate-border': config.border, '--gate-bg': config.bg }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="gate-preview-wrap">
+        <div className="gate-preview-content">
+          <pre className="gate-preview-text">{config.preview}</pre>
+        </div>
+        <div className="gate-blur-overlay" />
+      </div>
 
-.plan-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--plan-border, rgba(255,255,255,0.1));
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-  transition: all 0.3s ease;
-}
+      <div className="gate-cta-panel">
+        <div className="gate-lock-icon">
+          <Lock size={28} style={{ color: config.color }} />
+        </div>
+        <h3 className="gate-title">{config.title}</h3>
+        <p className="gate-subtitle">
+          This section is available on the <strong style={{ color: config.color }}>{config.tier}</strong> plan.
+          Upgrade to unlock the full analysis layer.
+        </p>
+        <button
+          className="gate-cta-btn"
+          style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
+          onClick={() => openUpgradeModal(config.tier === 'CONSULTANT' ? 'CONSULTANT' : config.tier)}
+        >
+          <Zap size={16} /> Unlock {config.title} →
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
-.plan-card.plan-highlighted {
-  border-color: var(--plan-border);
-  box-shadow: 0 0 24px var(--plan-bg);
-  background: var(--plan-bg);
-}
-
-.plan-card.plan-active {
-  opacity: 0.6;
-}
-
-.plan-badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--brand-purple);
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 3px 12px;
-  border-radius: 99px;
-}
-
-.plan-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.plan-name {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  margin: 0;
-}
-
-.plan-price {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.plan-features {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  margin: 8px 0;
-}
-
-.plan-features li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.plan-cta {
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: auto;
-}
-
-.plan-cta:hover:not(:disabled) {
-  filter: brightness(1.2);
-  transform: translateY(-1px);
-}
-
-.plan-cta:disabled {
-  cursor: default;
-  opacity: 0.7;
-}
-
-.modal-disclaimer {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
-}
+export default PremiumGate;
