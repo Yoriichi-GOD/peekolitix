@@ -1,0 +1,72 @@
+:root {
+  --bg-surface: #0b0c10;
+  --bg-muted: #1f2833;
+  --bg-panel: #13151c;
+  --brand-purple: #7b2cbf;
+  --brand-purple-hover: #9d4edd;
+  --brand-purple-muted: rgba(123, 44, 191, 0.2);
+  
+  --text-primary: #f8f9fa;
+  --text-muted: #adb5bd;
+  --text-accent: #c77dff;
+
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(123, 44, 191, 0.5);
+
+  --chart-color-1: #9d4edd;
+  --chart-color-2: #c77dff;
+  --chart-color-3: #5a189a;
+  
+  --status-neutral: #8ecae6;
+  --status-pro: #38b000;
+  --status-anti: #d00000;
+  
+  font-family: 'Inter', 'Roboto', 'Outfit', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden; /* App will manage its own scrolling */
+}
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-muted);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-purple);
+}
