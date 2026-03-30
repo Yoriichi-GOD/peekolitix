@@ -6,26 +6,81 @@ import RightPanel from './components/RightPanel';
 import BriefingArea from './components/BriefingArea';
 import { generateIntelligenceReport, synthesizeHistory } from './services/gemini';
 import ReportView from './components/ReportView';
+import SimulateView from './components/SimulateView';
 import { motion } from 'framer-motion';
+import { PremiumProvider, usePremium, TIERS } from './context/PremiumContext';
+import UpgradeModal from './components/UpgradeModal';
+import PremiumGate from './components/PremiumGate';
 
-function App() {
+// Premium mode key map: what base mode to use as the underlying query
+const PREMIUM_MODE_BASE = {
+  STUDENT_PREMIUM: 'DEBATE',
+  JOURNALIST_PREMIUM: 'DEBATE',
+  CONSULTANT_PREMIUM: 'DEBATE',
+};
+
+function AppInner() {
   const [currentMode, setMode] = useState('DEBATE');
   const [currentPerspective, setPerspective] = useState('NEUTRAL');
   const [isLoading, setIsLoading] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
-  
-  // App state for history management
   const [history, setHistory] = useState([]);
 
+  const { tier, openUpgradeModal, canAccessMode, canQuery, incrementQuery } = usePremium();
+
+  const isPremiumMode = (mode) => Object.keys(PREMIUM_MODE_BASE).includes(mode);
+
   const handleQuerySubmit = async (query) => {
+    // Free plan query limit check
+    if (!canQuery()) {
+      openUpgradeModal(TIERS.STUDENT);
+      return;
+    }
+
     setIsLoading(true);
     setIntelligenceData(null);
+    incrementQuery();
+
     try {
-      const markdownRes = await generateIntelligenceReport(query, currentMode, currentPerspective, history.slice(-3));
+      const baseMode = isPremiumMode(currentMode) ? PREMIUM_MODE_BASE[currentMode] : currentMode;
+      const premiumKey = isPremiumMode(currentMode) ? currentMode : null;
+
+      const markdownRes = await generateIntelligenceReport(
+        query, baseMode, currentPerspective, history.slice(-3), premiumKey
+      );
       
-      const newEntry = { id: Date.now(), query, mode: currentMode, perspective: currentPerspective, report: markdownRes };
+      // Extract dominance data from the hidden JSON block
+      let dominanceData = { dominanceScore: 5, biasLevel: 'Low', winProbability: '50%' };
+      try {
+        const jsonMatch = markdownRes.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch && jsonMatch[1]) {
+          const parsed = JSON.parse(jsonMatch[1]);
+          if (parsed.dominanceScore) {
+            dominanceData = {
+              dominanceScore: parsed.dominanceScore,
+              biasLevel: parsed.biasLevel || 'Low',
+              winProbability: parsed.winProbability || '50%'
+            };
+          }
+        }
+      } catch (e) { console.error("Score parsing error", e); }
+
+      const newEntry = { 
+        id: Date.now(), 
+        query, 
+        mode: currentMode, 
+        perspective: currentPerspective, 
+        report: markdownRes,
+        ...dominanceData
+      };
       setHistory(prev => [...prev, newEntry]); 
       
+      const reportEl = currentMode === 'SIMULATE' ? (
+        <SimulateView markdownContent={markdownRes} />
+      ) : (
+        <ReportView markdownContent={markdownRes} />
+      );
+
       setIntelligenceData(
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
@@ -33,7 +88,7 @@ function App() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           style={{ width: '100%' }}
         >
-          <ReportView markdownContent={markdownRes} />
+          {reportEl}
         </motion.div>
       );
     } catch (error) {
@@ -95,6 +150,19 @@ function App() {
     }, 50);
   };
 
+  // Premium gate sections to show below free results
+  const getPremiumGates = () => {
+    const gates = [];
+    if (tier === TIERS.FREE && intelligenceData && !isLoading) {
+      gates.push('STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM');
+    } else if (tier === TIERS.STUDENT && intelligenceData && !isLoading) {
+      gates.push('JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM');
+    } else if (tier === TIERS.JOURNALIST && intelligenceData && !isLoading) {
+      gates.push('CONSULTANT_PREMIUM');
+    }
+    return gates;
+  };
+
   return (
     <div className="app-container">
       <Sidebar 
@@ -116,11 +184,22 @@ function App() {
             onQuerySubmit={handleQuerySubmit}
             isLoading={isLoading}
             intelligenceData={intelligenceData}
+            premiumGates={getPremiumGates()}
           />
-          <RightPanel />
+          <RightPanel history={history} />
         </div>
       </div>
+
+      <UpgradeModal />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <PremiumProvider>
+      <AppInner />
+    </PremiumProvider>
   );
 }
 
