@@ -1,136 +1,194 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, GraduationCap, Newspaper, Briefcase, Check, Zap } from 'lucide-react';
-import { usePremium, TIERS } from '../context/PremiumContext';
-import './UpgradeModal.css';
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
 
-const PLAN_ICONS = {
-  [TIERS.STUDENT]: GraduationCap,
-  [TIERS.JOURNALIST]: Newspaper,
-  [TIERS.CONSULTANT]: Briefcase,
-};
+.modal-container {
+  background: #0f1117;
+  border: 1px solid rgba(199, 125, 255, 0.3);
+  border-radius: 16px;
+  max-width: 960px;
+  width: 100%;
+  padding: 36px;
+  box-shadow: 0 0 60px rgba(123, 44, 191, 0.3), 0 25px 50px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
 
-const PLAN_FEATURES = {
-  [TIERS.STUDENT]: [
-    'Unlimited queries (Free: 15/day)',
-    'All 5 modes + Combined History Output',
-    'Argument Evaluator — AI scores your JAM/GD speech',
-    'Counter-Argument Generator — 3 sharp rebuttals per query',
-    'ELI18 Exam-Ready Summary — simplified with analogies',
-    'PDF Export — one-click debate prep sheet',
-    'Unlimited history storage',
-  ],
-  [TIERS.JOURNALIST]: [
-    'Everything in Student',
-    'RTI Angle Generator',
-    'Policy Timeline Builder',
-    'Hidden Story Angles (3 per query)',
-    'Article Opener Draft',
-    'Government Claim Tracker',
-    'Multi-language summary',
-  ],
-  [TIERS.CONSULTANT]: [
-    'Everything in Journalist',
-    'Alliance Risk Scanner',
-    'Swing Factor Analysis',
-    'Narrative Stress Test (full 3-round)',
-    'Opposition Research Dossier',
-    'Constituency Impact Profile',
-    'White-label PDF reports',
-    'API access',
-  ],
-};
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
 
-const UpgradeModal = () => {
-  const { showUpgradeModal, closeUpgradeModal, upgradeTo, TIER_CONFIG, TIERS, targetTier, tier } = usePremium();
+.modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  const plans = [TIERS.STUDENT, TIERS.JOURNALIST, TIERS.CONSULTANT];
+.modal-title-wrap h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+  margin: 0;
+}
 
-  return (
-    <AnimatePresence>
-      {showUpgradeModal && (
-        <motion.div
-          className="modal-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={closeUpgradeModal}
-        >
-          <motion.div
-            className="modal-container"
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ type: 'spring', duration: 0.4 }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div className="modal-title-wrap">
-                <Star size={20} className="modal-star" />
-                <h2>UNLOCK PREMIUM INTELLIGENCE</h2>
-              </div>
-              <button className="modal-close" onClick={closeUpgradeModal}><X size={18} /></button>
-            </div>
+.modal-star {
+  color: #ffd166;
+  animation: pulse 2s infinite;
+}
 
-            <p className="modal-subtitle">
-              Choose your tier. Analysts win debates. War Rooms win elections.
-            </p>
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  border: 1px solid var(--border-color);
+}
 
-            <div className="plans-grid">
-              {plans.map(planKey => {
-                const config = TIER_CONFIG[planKey];
-                const Icon = PLAN_ICONS[planKey];
-                const features = PLAN_FEATURES[planKey];
-                const isHighlighted = targetTier === planKey;
-                const isActive = tier === planKey;
+.modal-close:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+}
 
-                return (
-                  <motion.div
-                    key={planKey}
-                    className={`plan-card ${isHighlighted ? 'plan-highlighted' : ''} ${isActive ? 'plan-active' : ''}`}
-                    style={{ '--plan-color': config.color, '--plan-bg': config.bg, '--plan-border': config.border }}
-                    whileHover={{ y: -4 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    {isHighlighted && <div className="plan-badge">RECOMMENDED</div>}
-                    <div className="plan-icon-wrap" style={{ background: config.bg, border: `1px solid ${config.border}` }}>
-                      <Icon size={22} style={{ color: config.color }} />
-                    </div>
-                    <h3 className="plan-name" style={{ color: config.color }}>{config.label}</h3>
-                    <div className="plan-price">{config.price}</div>
+.modal-subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 32px;
+}
 
-                    <ul className="plan-features">
-                      {features.map((f, i) => (
-                        <li key={i}>
-                          <Check size={13} style={{ color: config.color, flexShrink: 0 }} />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
 
-                    <button
-                      className="plan-cta"
-                      style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
-                      onClick={() => upgradeTo(planKey)}
-                      disabled={isActive}
-                    >
-                      {isActive ? '✓ CURRENT PLAN' : (
-                        <><Zap size={14} /> ACTIVATE {config.label.toUpperCase()}</>
-                      )}
-                    </button>
-                  </motion.div>
-                );
-              })}
-            </div>
+@media (max-width: 768px) {
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
-            <p className="modal-disclaimer">
-              ⚡ Demo mode — click any plan to simulate activation. No payment required.
-            </p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
+.plan-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--plan-border, rgba(255,255,255,0.1));
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+}
 
-export default UpgradeModal;
+.plan-card.plan-highlighted {
+  border-color: var(--plan-border);
+  box-shadow: 0 0 24px var(--plan-bg);
+  background: var(--plan-bg);
+}
+
+.plan-card.plan-active {
+  opacity: 0.6;
+}
+
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--brand-purple);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 12px;
+  border-radius: 99px;
+}
+
+.plan-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.plan-price {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.plan-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  margin: 8px 0;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.plan-cta {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.plan-cta:hover:not(:disabled) {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+
+.plan-cta:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.modal-disclaimer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
