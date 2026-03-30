@@ -16,7 +16,7 @@ export const TIER_CONFIG = {
     bg: 'rgba(173,181,189,0.15)',
     border: 'rgba(173,181,189,0.3)',
     dailyLimit: 15,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','BATTLE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','BATTLE','VERIFY','COMPARE'],
     premiumModes: [],
   },
   [TIERS.STUDENT]: {
@@ -26,7 +26,7 @@ export const TIER_CONFIG = {
     border: 'rgba(56,176,0,0.35)',
     price: 'â‚¹49/mo',
     dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','BATTLE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','BATTLE','VERIFY','COMPARE'],
     premiumModes: ['STUDENT_PREMIUM'],
   },
   [TIERS.JOURNALIST]: {
@@ -36,7 +36,7 @@ export const TIER_CONFIG = {
     border: 'rgba(244,162,97,0.35)',
     price: 'â‚¹199/mo',
     dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','BATTLE','SIMULATE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','BATTLE','SIMULATE','VERIFY','COMPARE'],
     premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM'],
   },
   [TIERS.CONSULTANT]: {
@@ -46,7 +46,7 @@ export const TIER_CONFIG = {
     border: 'rgba(199,125,255,0.35)',
     price: 'â‚¹499/mo',
     dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK', 'STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM', 'BATTLE', 'SIMULATE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK', 'STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM', 'BATTLE', 'SIMULATE', 'VERIFY', 'COMPARE'],
     premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM','CONSULTANT_PREMIUM'],
   },
 };

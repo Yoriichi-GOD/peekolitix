@@ -1,0 +1,94 @@
+.compare-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+}
+
+.compare-entity {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.compare-vs {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--brand-purple-hover);
+  background: rgba(124, 58, 237, 0.15);
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
+.compare-view .markdown-content {
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.compare-view .markdown-content h3 {
+  color: var(--brand-purple-hover);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.compare-view .markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.compare-view .markdown-content thead th {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--brand-purple-hover);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(124, 58, 237, 0.3);
+}
+
+.compare-view .markdown-content tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.compare-view .markdown-content tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.compare-view .markdown-content blockquote {
+  border-left: 3px solid #00d4ff;
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
+  border-right: 1px solid rgba(0, 212, 255, 0.2);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  background: rgba(0, 212, 255, 0.05);
+  margin: 0 0 16px 0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.compare-view .markdown-content blockquote strong {
+  color: #00d4ff;
+  font-style: normal;
+}

@@ -7,6 +7,8 @@ import BriefingArea from './components/BriefingArea';
 import { generateIntelligenceReport, synthesizeHistory } from './services/gemini';
 import ReportView from './components/ReportView';
 import SimulateView from './components/SimulateView';
+import VerifyView from './components/VerifyView';
+import CompareView from './components/CompareView';
 import { motion } from 'framer-motion';
 import { PremiumProvider, usePremium, TIERS } from './context/PremiumContext';
 import UpgradeModal from './components/UpgradeModal';
@@ -107,11 +109,16 @@ function AppInner() {
         })
       }).catch(err => console.error("Supabase sync failed", err));
       
-      const reportEl = currentMode === 'SIMULATE' ? (
-        <SimulateView markdownContent={markdownRes} />
-      ) : (
-        <ReportView markdownContent={markdownRes} />
-      );
+      let reportEl;
+      if (currentMode === 'SIMULATE') {
+        reportEl = <SimulateView markdownContent={markdownRes} />;
+      } else if (currentMode === 'VERIFY') {
+        reportEl = <VerifyView markdownContent={markdownRes} />;
+      } else if (currentMode === 'COMPARE') {
+        reportEl = <CompareView markdownContent={markdownRes} />;
+      } else {
+        reportEl = <ReportView markdownContent={markdownRes} />;
+      }
 
       setIntelligenceData(
         <motion.div 

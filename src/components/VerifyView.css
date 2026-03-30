@@ -1,0 +1,79 @@
+.verify-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.verdict-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.verdict-banner.true {
+  background: rgba(56, 176, 0, 0.12);
+  border: 1px solid rgba(56, 176, 0, 0.4);
+  color: #38b000;
+}
+
+.verdict-banner.false {
+  background: rgba(239, 71, 111, 0.12);
+  border: 1px solid rgba(239, 71, 111, 0.4);
+  color: #ef476f;
+}
+
+.verdict-banner.partial {
+  background: rgba(255, 209, 102, 0.12);
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  color: #ffd166;
+}
+
+.verdict-banner.misleading {
+  background: rgba(251, 133, 0, 0.12);
+  border: 1px solid rgba(251, 133, 0, 0.4);
+  color: #fb8500;
+}
+
+.verdict-banner.unverifiable {
+  background: rgba(173, 181, 189, 0.12);
+  border: 1px solid rgba(173, 181, 189, 0.4);
+  color: #adb5bd;
+}
+
+.verdict-icon {
+  font-size: 1.6rem;
+}
+
+.verify-view .markdown-content {
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.verify-view .markdown-content h3 {
+  color: var(--brand-purple-hover);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.verify-view .markdown-content blockquote {
+  border-left: 3px solid var(--brand-purple, #7c3aed);
+  border-top: 1px solid rgba(124, 58, 237, 0.2);
+  border-right: 1px solid rgba(124, 58, 237, 0.2);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+  background: rgba(124, 58, 237, 0.05);
+  margin: 0 0 16px 0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-style: italic;
+  color: var(--text-muted);
+}

@@ -21,6 +21,8 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
       case 'EXPLAIN': return 'POLICY & BUDGET EXPLANATION';
       case 'GEO': return 'GLOBAL GEOPOLITICAL IMPACT';
       case 'QUICK': return 'RAPID RESPONSE BRIEFING';
+      case 'VERIFY': return 'CLAIM VERIFICATION ENGINE';
+      case 'COMPARE': return 'POLITICIAN / POLICY COMPARISON';
       default: return 'INTELLIGENCE BRIEFING';
     }
   };
@@ -54,7 +56,12 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
           <div className="empty-state">
             <Search size={48} className="empty-icon" />
             <h2>AWAITING QUERY INPUT</h2>
-            <p>Select a mode and perspective, then enter your query below to generate a factual, data-driven report based on verified sources (PIB, Lok Sabha, RBI, NITI Aayog).</p>
+            <p>{currentMode === 'VERIFY'
+              ? 'Paste a claim, WhatsApp forward, or political statement to fact-check it against verified sources.'
+              : currentMode === 'COMPARE'
+              ? 'Enter two politicians, parties, or policies to compare. E.g. "Modi vs Rahul Gandhi economic policy"'
+              : 'Select a mode and perspective, then enter your query below to generate a factual, data-driven report based on verified sources (PIB, Lok Sabha, RBI, NITI Aayog).'
+            }</p>
           </div>
         )}
       </div>

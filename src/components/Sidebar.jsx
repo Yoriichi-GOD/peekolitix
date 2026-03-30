@@ -18,7 +18,9 @@ import {
   Star,
   Lock,
   Target,
-  Users
+  Users,
+  ShieldCheck,
+  GitCompareArrows
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePremium, TIERS } from '../context/PremiumContext';
@@ -37,6 +39,8 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
     { id: 'EXPLAIN', label: 'Policy Breakdown', icon: BookOpen },
     { id: 'GEO', label: 'Global Impact', icon: Globe },
     { id: 'QUICK', label: 'Rapid Response', icon: Zap },
+    { id: 'VERIFY', label: 'Claim Verify', icon: ShieldCheck },
+    { id: 'COMPARE', label: 'Compare', icon: GitCompareArrows },
   ];
 
   const premiumChannels = [
