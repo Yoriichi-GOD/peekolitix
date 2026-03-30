@@ -11,18 +11,27 @@ import {
   Globe,
   Zap,
   Swords,
-  Layers
+  Layers,
+  GraduationCap,
+  Newspaper,
+  Briefcase,
+  Star,
+  Lock,
+  Target,
+  Users
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePremium, TIERS } from '../context/PremiumContext';
 
 const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHistory }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { tier, canAccessMode, openUpgradeModal, TIER_CONFIG } = usePremium();
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  const tierConfig = TIER_CONFIG[tier];
 
-  const channels = [
+  const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+
+  const baseChannels = [
     { id: 'DEBATE', label: 'Pro/Con Analysis', icon: Swords },
     { id: 'STATS', label: 'Data & Trends', icon: PieChart },
     { id: 'EXPLAIN', label: 'Policy Breakdown', icon: BookOpen },
@@ -30,8 +39,36 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
     { id: 'QUICK', label: 'Rapid Response', icon: Zap },
   ];
 
+  const premiumChannels = [
+    { 
+      id: 'STUDENT_PREMIUM', label: 'Debate Pack', icon: GraduationCap,
+      tier: TIERS.STUDENT, color: '#38b000', border: 'rgba(56,176,0,0.3)',
+    },
+    { 
+      id: 'JOURNALIST_PREMIUM', label: 'Source Engine', icon: Newspaper,
+      tier: TIERS.JOURNALIST, color: '#f4a261', border: 'rgba(244,162,97,0.3)',
+    },
+    { 
+      id: 'CONSULTANT_PREMIUM', label: 'War Room', icon: Briefcase,
+      tier: TIERS.CONSULTANT, color: '#c77dff', border: 'rgba(199,125,255,0.3)',
+    },
+  ];
+
+  const combatChannels = [
+    { id: 'BATTLE', label: 'Battle Mode', icon: Target, color: '#ff4d4d', border: 'rgba(255,77,77,0.3)' },
+    { id: 'SIMULATE', label: 'Simulation', icon: Users, color: '#00d4ff', border: 'rgba(0,212,255,0.3)' },
+  ];
+
+  const handleModeClick = (channel) => {
+    if (channel.tier && !canAccessMode(channel.id)) {
+      openUpgradeModal(channel.tier);
+    } else {
+      setMode(channel.id);
+    }
+  };
+
   return (
-    <motion.aside 
+    <motion.aside
       className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''}`}
       initial={{ width: 260 }}
       animate={{ width: isCollapsed ? 64 : 260 }}
@@ -41,12 +78,26 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
         {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </div>
 
+      {/* Tier badge */}
+      {!isCollapsed && (
+        <motion.div
+          className="tier-badge"
+          style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, color: tierConfig.color }}
+          onClick={() => openUpgradeModal()}
+          whileHover={{ scale: 1.02 }}
+        >
+          <Star size={12} />
+          <span>{tierConfig.label} Plan</span>
+          {tier === TIERS.FREE && <span className="tier-upgrade-hint">Upgrade â†’</span>}
+        </motion.div>
+      )}
+
       <div className="sidebar-section">
         {!isCollapsed && <h3 className="section-title"><Radio size={14} /> INTELLIGENCE MODES</h3>}
         {isCollapsed && <div className="collapsed-icon"><Radio size={18} className="brand-icon" /></div>}
         
         <ul className="nav-list">
-          {channels.map((channel) => {
+          {baseChannels.map((channel) => {
             const Icon = channel.icon;
             const isActive = currentMode === channel.id;
             return (
@@ -75,7 +126,65 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
         )}
       </div>
 
-      <div className="sidebar-separator"></div>
+      <div className="sidebar-separator" />
+
+      {/* Premium modes */}
+      <div className="sidebar-section">
+        {!isCollapsed && <h3 className="section-title"><Star size={14} style={{ color: '#ffd166' }} /> PREMIUM MODES</h3>}
+        <ul className="nav-list">
+          {premiumChannels.map((channel) => {
+            const Icon = channel.icon;
+            const isActive = currentMode === channel.id;
+            const hasAccess = canAccessMode(channel.id);
+            return (
+              <li 
+                key={channel.id} 
+                className={`nav-item premium-nav-item ${isActive ? 'active' : ''} ${!hasAccess ? 'premium-locked' : ''}`}
+                style={ hasAccess ? { '--pm-color': channel.color, '--pm-border': channel.border } : {} }
+                onClick={() => handleModeClick(channel)}
+                title={isCollapsed ? channel.label : ''}
+              >
+                <Icon size={18} style={ hasAccess ? { color: channel.color } : {}} />
+                {!isCollapsed && <span>{channel.label}</span>}
+                {!isCollapsed && !hasAccess && <Lock size={12} className="lock-icon" />}
+              </li>
+            );
+          })}
+        </ul>
+
+        {!isCollapsed && tier === TIERS.FREE && (
+          <button className="upgrade-sidebar-btn" onClick={() => openUpgradeModal()}>
+            <Zap size={14} /> UPGRADE NOW
+          </button>
+        )}
+      </div>
+
+      <div className="sidebar-separator" />
+
+      {/* Combat modes */}
+      <div className="sidebar-section">
+        {!isCollapsed && <h3 className="section-title"><Target size={14} style={{ color: '#ff4d4d' }} /> COMBAT ARENA</h3>}
+        <ul className="nav-list">
+          {combatChannels.map((channel) => {
+            const Icon = channel.icon;
+            const isActive = currentMode === channel.id;
+            return (
+              <li 
+                key={channel.id} 
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                style={ isActive ? { '--pm-color': channel.color, '--pm-border': channel.border } : {} }
+                onClick={() => setMode(channel.id)}
+                title={isCollapsed ? channel.label : ''}
+              >
+                <Icon size={18} style={{ color: channel.color }} />
+                {!isCollapsed && <span>{channel.label}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="sidebar-separator" />
 
       <div className="sidebar-section h-full">
         {!isCollapsed && <h3 className="section-title"><History size={14} /> RECENT BRIEFINGS</h3>}
