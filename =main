@@ -1,46 +1,82 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import './SimulateView.css';
-import { Swords, ShieldAlert, Zap } from 'lucide-react';
+.simulate-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
 
-const SimulateView = ({ markdownContent }) => {
-  // Parsing the rounds (this is a simple split, assuming AI follows the system instruction exactly)
-  const rounds = markdownContent.split(/### 🏛️/);
-  const intro = rounds[0];
-  const roundContent = rounds.slice(1);
+.arena-intro {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 10px;
+  background: rgba(199, 125, 255, 0.05);
+  border-left: 2px solid #c77dff;
+}
 
-  return (
-    <div className="simulate-container">
-      {intro && <div className="arena-intro"><ReactMarkdown remarkPlugins={[remarkGfm]}>{intro}</ReactMarkdown></div>}
-      
-      <div className="arena-feed">
-        {roundContent.map((round, idx) => {
-          const title = round.split('\n')[0].trim();
-          const content = round.replace(title, '').trim();
-          
-          return (
-            <div key={idx} className="arena-round">
-              <div className="round-header">
-                <Swords size={16} />
-                <h4>ROUND {idx + 1}: {title}</h4>
-              </div>
-              <div className="round-body">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+.arena-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
 
-      <div className="arena-footer">
-        <div className="arena-badge">
-          <Zap size={14} />
-          <span>WAR ROOM SIMULATION COMPLETE</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+.arena-round {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-export default SimulateView;
+.round-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ff4d4d; /* Aggressive battle red */
+  text-transform: uppercase;
+}
+
+.round-body {
+  background: #0b0c10;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  line-height: 1.8;
+  font-size: 0.95rem;
+  color: #f8f9fa;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+}
+
+/* Custom styling for Archetype A vs B */
+.round-body strong {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.arena-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.arena-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: #1f2833;
+  color: #adb5bd;
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--border-color);
+}
