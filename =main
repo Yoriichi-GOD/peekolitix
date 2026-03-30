@@ -1,216 +1,222 @@
-import React, { useState } from 'react';
-import './Sidebar.css';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  MessageSquare, 
-  Radio, 
-  History,
-  BookOpen,
-  PieChart,
-  Globe,
-  Zap,
-  Swords,
-  Layers,
-  GraduationCap,
-  Newspaper,
-  Briefcase,
-  Star,
-  Lock,
-  Target,
-  Users
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { usePremium, TIERS } from '../context/PremiumContext';
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  position: relative;
+  z-index: 5;
+}
 
-const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHistory }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const { tier, canAccessMode, openUpgradeModal, TIER_CONFIG } = usePremium();
+.sidebar-toggle {
+  position: absolute;
+  top: 15px;
+  right: -13px;
+  width: 26px;
+  height: 26px;
+  background-color: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  /* Ensure it's not clipped by any parent */
+  clip-path: none;
+}
 
-  const tierConfig = TIER_CONFIG[tier];
+.sidebar-toggle:hover {
+  background-color: var(--brand-purple);
+  color: white;
+  border-color: var(--brand-purple);
+}
 
-  const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+.sidebar-section {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
 
-  const baseChannels = [
-    { id: 'DEBATE', label: 'Pro/Con Analysis', icon: Swords },
-    { id: 'STATS', label: 'Data & Trends', icon: PieChart },
-    { id: 'EXPLAIN', label: 'Policy Breakdown', icon: BookOpen },
-    { id: 'GEO', label: 'Global Impact', icon: Globe },
-    { id: 'QUICK', label: 'Rapid Response', icon: Zap },
-  ];
+.h-full {
+  flex: 1;
+}
 
-  const premiumChannels = [
-    { 
-      id: 'STUDENT_PREMIUM', label: 'Debate Pack', icon: GraduationCap,
-      tier: TIERS.STUDENT, color: '#38b000', border: 'rgba(56,176,0,0.3)',
-    },
-    { 
-      id: 'JOURNALIST_PREMIUM', label: 'Source Engine', icon: Newspaper,
-      tier: TIERS.JOURNALIST, color: '#f4a261', border: 'rgba(244,162,97,0.3)',
-    },
-    { 
-      id: 'CONSULTANT_PREMIUM', label: 'War Room', icon: Briefcase,
-      tier: TIERS.CONSULTANT, color: '#c77dff', border: 'rgba(199,125,255,0.3)',
-    },
-  ];
+.section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  const combatChannels = [
-    { id: 'BATTLE', label: 'Battle Mode', icon: Target, color: '#ff4d4d', border: 'rgba(255,77,77,0.3)' },
-    { id: 'SIMULATE', label: 'Simulation', icon: Users, color: '#00d4ff', border: 'rgba(0,212,255,0.3)' },
-  ];
+.collapsed-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+}
 
-  const handleModeClick = (channel) => {
-    if (channel.tier && !canAccessMode(channel.id)) {
-      openUpgradeModal(channel.tier);
-    } else {
-      setMode(channel.id);
-    }
-  };
+.nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-  return (
-    <motion.aside
-      className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''}`}
-      initial={{ width: 260 }}
-      animate={{ width: isCollapsed ? 64 : 260 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-    >
-      <div className="sidebar-toggle" onClick={toggleSidebar}>
-        {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-      </div>
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
 
-      {/* Tier badge */}
-      {!isCollapsed && (
-        <motion.div
-          className="tier-badge"
-          style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, color: tierConfig.color }}
-          onClick={() => openUpgradeModal()}
-          whileHover={{ scale: 1.02 }}
-        >
-          <Star size={12} />
-          <span>{tierConfig.label} Plan</span>
-          {tier === TIERS.FREE && <span className="tier-upgrade-hint">Upgrade →</span>}
-        </motion.div>
-      )}
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
 
-      <div className="sidebar-section">
-        {!isCollapsed && <h3 className="section-title"><Radio size={14} /> INTELLIGENCE MODES</h3>}
-        {isCollapsed && <div className="collapsed-icon"><Radio size={18} className="brand-icon" /></div>}
-        
-        <ul className="nav-list">
-          {baseChannels.map((channel) => {
-            const Icon = channel.icon;
-            const isActive = currentMode === channel.id;
-            return (
-              <li 
-                key={channel.id} 
-                className={`nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => setMode(channel.id)}
-                title={isCollapsed ? channel.label : ''}
-              >
-                <Icon size={18} className={isActive ? 'active-icon' : ''} />
-                {!isCollapsed && <span>{channel.label}</span>}
-              </li>
-            );
-          })}
-        </ul>
+.nav-item.active {
+  background-color: var(--brand-purple-muted);
+  color: var(--brand-purple-hover);
+  border: 1px solid rgba(157, 78, 221, 0.3);
+}
 
-        {history.length > 0 && (
-          <button 
-            className="synthesize-btn" 
-            onClick={onSynthesize}
-            title={isCollapsed ? "Synthesize History" : ""}
-          >
-            <Layers size={18} />
-            {!isCollapsed && <span>COMBINE HISTORY</span>}
-          </button>
-        )}
-      </div>
+.synthesize-btn {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-surface);
+  color: var(--brand-purple-hover);
+  border: 1px dashed var(--brand-purple-hover);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
 
-      <div className="sidebar-separator" />
+.synthesize-btn:hover {
+  background-color: rgba(157, 78, 221, 0.1);
+}
 
-      {/* Premium modes */}
-      <div className="sidebar-section">
-        {!isCollapsed && <h3 className="section-title"><Star size={14} style={{ color: '#ffd166' }} /> PREMIUM MODES</h3>}
-        <ul className="nav-list">
-          {premiumChannels.map((channel) => {
-            const Icon = channel.icon;
-            const isActive = currentMode === channel.id;
-            const hasAccess = canAccessMode(channel.id);
-            return (
-              <li 
-                key={channel.id} 
-                className={`nav-item premium-nav-item ${isActive ? 'active' : ''} ${!hasAccess ? 'premium-locked' : ''}`}
-                style={ hasAccess ? { '--pm-color': channel.color, '--pm-border': channel.border } : {} }
-                onClick={() => handleModeClick(channel)}
-                title={isCollapsed ? channel.label : ''}
-              >
-                <Icon size={18} style={ hasAccess ? { color: channel.color } : {}} />
-                {!isCollapsed && <span>{channel.label}</span>}
-                {!isCollapsed && !hasAccess && <Lock size={12} className="lock-icon" />}
-              </li>
-            );
-          })}
-        </ul>
+.active-icon {
+  color: var(--brand-purple-hover);
+}
 
-        {!isCollapsed && tier === TIERS.FREE && (
-          <button className="upgrade-sidebar-btn" onClick={() => openUpgradeModal()}>
-            <Zap size={14} /> UPGRADE NOW
-          </button>
-        )}
-      </div>
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
 
-      <div className="sidebar-separator" />
+.sidebar-separator {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0 16px;
+}
 
-      {/* Combat modes */}
-      <div className="sidebar-section">
-        {!isCollapsed && <h3 className="section-title"><Target size={14} style={{ color: '#ff4d4d' }} /> COMBAT ARENA</h3>}
-        <ul className="nav-list">
-          {combatChannels.map((channel) => {
-            const Icon = channel.icon;
-            const isActive = currentMode === channel.id;
-            return (
-              <li 
-                key={channel.id} 
-                className={`nav-item ${isActive ? 'active' : ''}`}
-                style={ isActive ? { '--pm-color': channel.color, '--pm-border': channel.border } : {} }
-                onClick={() => setMode(channel.id)}
-                title={isCollapsed ? channel.label : ''}
-              >
-                <Icon size={18} style={{ color: channel.color }} />
-                {!isCollapsed && <span>{channel.label}</span>}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+.briefing-list {
+  overflow-y: auto;
+  max-height: 180px;
+}
 
-      <div className="sidebar-separator" />
+.briefing-item {
+  font-size: 0.85rem;
+}
 
-      <div className="sidebar-section h-full">
-        {!isCollapsed && <h3 className="section-title"><History size={14} /> RECENT BRIEFINGS</h3>}
-        {isCollapsed && <div className="collapsed-icon"><History size={18} className="brand-icon"/></div>}
-        
-        <ul className="nav-list briefing-list">
-          {history.length === 0 && !isCollapsed && (
-            <div className="empty-history text-muted" style={{ fontSize: '0.8rem', fontStyle: 'italic', padding: '10px' }}>
-              No intelligence gathered yet.
-            </div>
-          )}
-          {[...history].reverse().map((item) => (
-            <li 
-              key={item.id} 
-              className="nav-item briefing-item" 
-              title={item.query}
-              onClick={() => onSelectHistory(item)}
-            >
-              <MessageSquare size={16} className="text-muted" style={{ flexShrink: 0 }} />
-              {!isCollapsed && <span className="truncate">{item.query}</span>}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </motion.aside>
-  );
-};
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
 
-export default Sidebar;
+/* Tier Badge */
+.tier-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 16px 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tier-upgrade-hint {
+  margin-left: auto;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Premium Nav Items */
+.premium-nav-item {
+  border: 1px solid transparent;
+}
+
+.premium-nav-item:not(.premium-locked):hover,
+.premium-nav-item.active {
+  background-color: rgba(var(--pm-color, 255,255,255), 0.08) !important;
+  color: var(--pm-color, var(--text-primary)) !important;
+  border-color: var(--pm-border, transparent) !important;
+}
+
+.premium-locked {
+  opacity: 0.5;
+  border-style: dashed !important;
+}
+
+.lock-icon {
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+.nav-item.locked {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+/* Upgrade CTA in sidebar */
+.upgrade-sidebar-btn {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(123,44,191,0.3), rgba(199,125,255,0.2));
+  border: 1px solid rgba(199,125,255,0.5);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #c77dff;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.upgrade-sidebar-btn:hover {
+  background: linear-gradient(135deg, rgba(123,44,191,0.5), rgba(199,125,255,0.35));
+  box-shadow: 0 0 16px rgba(199,125,255,0.3);
+  transform: translateY(-1px);
+}
+
