@@ -230,11 +230,6 @@ app.get('/api/history', async (req, res) => {
   }
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
-
 // Start server
 app.listen(PORT, () => {
   console.log('\n' + '='.repeat(60));
@@ -265,4 +260,9 @@ app.get('/test-db', async (req, res) => {
   }
 
   res.json({ success: true, data });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
 });
