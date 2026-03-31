@@ -100,8 +100,9 @@ const UpgradeModal = () => {
 
     } catch (err) {
       console.error("Razorpay UI Error:", err);
-      // Fallback for Development (Simulate Upgrade if network is disconnected)
-      if (err.message === "Failed to fetch") upgradeTo(planKey);
+      // Fallback for Development (Simulate Upgrade if network is disconnected or Keys missing)
+      alert(`[DEVELOPER ALARM]: Razorpay failed to load (${err.message}). Bypassing gateway and applying clearance upgrade for testing.`);
+      upgradeTo(planKey);
     }
   };
 

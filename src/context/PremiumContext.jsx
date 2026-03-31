@@ -61,14 +61,16 @@ export const PremiumProvider = ({ children }) => {
   const [targetTier, setTargetTier] = useState(null);
   const { user } = useAuth() || {};
 
-  // Automatically elevate clearance if user is logged in
+  // Restore tier from localStorage so developer can test freely
   useEffect(() => {
-    if (user) {
-      setTier(TIERS.CONSULTANT);
+    const savedTier = localStorage.getItem('peekolitix_dev_tier');
+    if (savedTier && Object.keys(TIERS).includes(savedTier)) {
+      setTier(savedTier);
     } else {
       setTier(TIERS.FREE);
     }
-  }, [user]);
+  }, []);
+
 
   const canQuery = () => {
     const config = TIER_CONFIG[tier];
@@ -88,6 +90,7 @@ export const PremiumProvider = ({ children }) => {
 
   const upgradeTo = (newTier) => {
     setTier(newTier);
+    localStorage.setItem('peekolitix_dev_tier', newTier);
     setQueryCount(0);
     setShowUpgradeModal(false);
   };
