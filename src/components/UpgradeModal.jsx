@@ -65,7 +65,7 @@ const UpgradeModal = () => {
 
       // 3. Spawns Razorpay Checkout Window
       const options = {
-        key: 'rzp_live_SXn65yEl8EFyrc', // Replaced dynamically in Prod
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Dynamically loaded from Vercel/Local Env
         amount: orderData.order.amount,
         currency: 'INR',
         name: 'Peekolitix',
