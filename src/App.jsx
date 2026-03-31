@@ -10,6 +10,7 @@ import SimulateView from './components/SimulateView';
 import VerifyView from './components/VerifyView';
 import CompareView from './components/CompareView';
 import { motion } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
 import { PremiumProvider, usePremium, TIERS } from './context/PremiumContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthView from './components/AuthView';
@@ -30,6 +31,7 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const { tier, openUpgradeModal, canQuery, incrementQuery } = usePremium();
   const { signOut, user } = useAuth();
@@ -192,20 +194,38 @@ function Dashboard() {
 
   return (
     <div className="app-container">
+      {/* Mobile Top Bar */}
+      <div className="mobile-header">
+        <button className="burger-btn" onClick={() => setIsMobileMenuOpen(true)}>
+          <Menu size={24} />
+        </button>
+        <div className="mobile-logo">PEEKOLITIX</div>
+        <div style={{ width: 40 }} /> {/* Spacer */}
+      </div>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
       <Sidebar 
         currentMode={currentMode} 
-        setMode={setMode} 
+        setMode={(m) => { setMode(m); setIsMobileMenuOpen(false); }} 
         onSynthesize={handleCombineHistory}
         history={history}
-        onSelectHistory={(item) => setIntelligenceData(<ReportView markdownContent={item.report} />)}
+        onSelectHistory={(item) => { 
+          setIntelligenceData(<ReportView markdownContent={item.report} />);
+          setIsMobileMenuOpen(false);
+        }}
         onSignOut={signOut}
         user={user}
+        isMobileOpen={isMobileMenuOpen}
       />
       
       <div className="main-content">
         <Header user={user} />
         
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="content-grid">
           <BriefingArea 
             currentMode={currentMode}
             currentPerspective={currentPerspective}

@@ -70,3 +70,13 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--brand-purple);
 }
+
+@media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+  
+  .desktop-only {
+    display: none !important;
+  }
+}

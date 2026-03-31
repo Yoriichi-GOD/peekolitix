@@ -14,9 +14,80 @@
 .main-content {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Desktop Default */
   height: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+    overflow: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .main-content {
+    flex-direction: column;
+    overflow: visible;
+    flex: none;
+  }
+
+  .content-grid {
+    flex-direction: column;
+    overflow: visible;
+  }
+}
+
+.content-grid {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* MOBILE ELEMENTS */
+.mobile-header {
+  display: none;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 20px;
+  align-items: center;
+  z-index: 101;
+}
+
+.burger-btn {
+  background: transparent;
+  border: none;
+  color: #c77dff;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.mobile-logo {
+  flex: 1;
+  text-align: center;
+  font-weight: 900;
+  letter-spacing: 3px;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+}
+
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex;
+  }
 }
 
 .glass-panel {

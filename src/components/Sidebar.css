@@ -4,9 +4,31 @@
   flex-direction: column;
   border-right: 1px solid var(--border-color);
   position: relative;
-  z-index: 5;
+  z-index: 100; /* Higher z-index for mobile drawer */
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--bg-surface);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 280px !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle {
+    display: none; /* Mobile uses the app header burger */
+  }
 }
 
 /* Custom Scrollbar for Sidebar */

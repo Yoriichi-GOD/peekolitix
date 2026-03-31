@@ -138,3 +138,8 @@
   box-shadow: 0 0 10px rgba(199, 125, 255, 0.3);
 }
 
+@media (max-width: 768px) {
+  .app-header {
+    display: none !important;
+  }
+}

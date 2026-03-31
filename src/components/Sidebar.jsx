@@ -27,7 +27,7 @@ import {
 import { motion } from 'framer-motion';
 import { usePremium, TIERS } from '../context/PremiumContext';
 
-const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHistory, onSignOut, user }) => {
+const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHistory, onSignOut, user, isMobileOpen }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { tier, canAccessMode, openUpgradeModal, TIER_CONFIG } = usePremium();
 
@@ -75,7 +75,7 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
 
   return (
     <motion.aside
-      className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''}`}
+      className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
       initial={{ width: 260 }}
       animate={{ width: isCollapsed ? 64 : 260 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}

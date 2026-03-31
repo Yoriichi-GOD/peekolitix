@@ -210,3 +210,23 @@
   font-weight: 800;
   letter-spacing: 2px;
 }
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 32px 24px;
+    width: 90%;
+  }
+
+  .auth-logo {
+    margin-bottom: 20px;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+    letter-spacing: 3px;
+  }
+
+  .auth-form {
+    gap: 16px;
+  }
+}
