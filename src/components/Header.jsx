@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Header.css';
 import { Activity, ShieldCheck, Terminal, Zap } from 'lucide-react';
 import { usePremium, TIERS } from '../context/PremiumContext';
 
 const Header = ({ user }) => {
-  const briefingId = `BRF-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}-${new Date().toISOString().substring(2, 10).replace(/-/g, '')}`;
+  const [briefingId] = useState(() => `BRF-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}-${new Date().toISOString().substring(2, 10).replace(/-/g, '')}`);
   const { tier, openUpgradeModal, TIER_CONFIG, queryCount } = usePremium();
   const tierConfig = TIER_CONFIG[tier];
 

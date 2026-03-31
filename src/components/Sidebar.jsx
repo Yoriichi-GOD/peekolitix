@@ -132,10 +132,10 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
         </ul>
 
         {history.length > 0 && (
-          <button 
-            className="synthesize-btn" 
+          <button
+            className={`synthesize-btn ${isCollapsed ? 'synthesize-collapsed' : ''}`}
             onClick={onSynthesize}
-            title={isCollapsed ? "Synthesize History" : ""}
+            title="Combine History"
           >
             <Layers size={18} />
             {!isCollapsed && <span>COMBINE HISTORY</span>}

@@ -15,6 +15,7 @@ import { PremiumProvider, usePremium, TIERS } from './context/PremiumContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthView from './components/AuthView';
 import UpgradeModal from './components/UpgradeModal';
+import DevPanel from './components/DevPanel';
 
 // Premium mode key map: what base mode to use as the underlying query
 const PREMIUM_MODE_BASE = {
@@ -23,7 +24,7 @@ const PREMIUM_MODE_BASE = {
   CONSULTANT_PREMIUM: 'DEBATE',
 };
 
-const BACKEND_URL = 'https://peekolitix.onrender.com';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 
 function Dashboard() {
   const [currentMode, setMode] = useState('DEBATE');
@@ -81,9 +82,12 @@ function Dashboard() {
       
       let dominanceData = { dominanceScore: 5, biasLevel: 'Low', winProbability: '50%' };
       try {
-        const jsonMatch = markdownRes.match(/```json\n?([\s\S]*?)\n?```/);
-        if (jsonMatch && jsonMatch[1]) {
-          const parsed = JSON.parse(jsonMatch[1]);
+        // Try fenced JSON first, then raw JSON object
+        const fencedMatch = markdownRes.match(/```json\n?([\s\S]*?)\n?```/);
+        const rawMatch = markdownRes.match(/\{\s*"dominanceScore"\s*:\s*\d[\s\S]*?"winProbability"\s*:\s*"[^"]*"\s*\}/);
+        const jsonStr = fencedMatch ? fencedMatch[1] : rawMatch ? rawMatch[0] : null;
+        if (jsonStr) {
+          const parsed = JSON.parse(jsonStr);
           if (parsed.dominanceScore) {
             dominanceData.dominanceScore = Math.min(Number(parsed.dominanceScore), 10);
             dominanceData.biasLevel = parsed.biasLevel || 'Low';
@@ -94,8 +98,10 @@ function Dashboard() {
 
       const cleanMarkdown = markdownRes
         .replace(/```json\n?([\s\S]*?)\n?```/g, '')
+        .replace(/\{\s*"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/g, '')
         .replace(/JSON[\s_]*BLOCK:?/gi, '')
-        .replace(/Note:[\s\S]*?$/gi, '')
+        .replace(/### MANDATORY JSON FOOTER ###[\s\S]*$/gi, '')
+        .replace(/\n\s*Note:\s*The (above|dominance|JSON|internal|hidden)[\s\S]*?$/gi, '')
         .replace(/PREMIUM LAYER:?/gi, '')
         .replace(/CONSULTANT_PREMIUM:?/gi, '')
         .trim();
@@ -184,12 +190,9 @@ function Dashboard() {
     }
   };
 
+  // Premium gates only show when user explicitly clicks a locked premium mode
   const getPremiumGates = () => {
-    const gates = [];
-    if (tier === TIERS.FREE && intelligenceData && !isLoading) {
-      gates.push('STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM');
-    }
-    return gates;
+    return [];
   };
 
   return (
@@ -240,6 +243,7 @@ function Dashboard() {
       </div>
 
       <UpgradeModal />
+      <DevPanel />
     </div>
   );
 }

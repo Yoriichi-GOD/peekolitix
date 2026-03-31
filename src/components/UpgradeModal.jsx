@@ -47,17 +47,15 @@ const UpgradeModal = () => {
   const { user } = useAuth();
 
   const handleUpgrade = async (planKey) => {
-    // 1. Get the price logic (Strip '₹' and '/mo' to get clean integer)
     const config = TIER_CONFIG[planKey];
-    const amountStr = config.price.replace(/[^0-9]/g, '');
-    const amount = parseInt(amountStr, 10);
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 
     try {
-      // 2. Contact Backend: Create Order
-      const response = await fetch('https://peekolitix.onrender.com/api/create-order', {
+      // 1. Contact Backend: Create Order (server validates price)
+      const response = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, receipt: `rcpt_${planKey}_${Date.now()}` })
+        body: JSON.stringify({ plan: planKey, receipt: `rcpt_${planKey}_${Date.now()}` })
       });
       const orderData = await response.json();
 
@@ -73,7 +71,7 @@ const UpgradeModal = () => {
         order_id: orderData.order.id,
         handler: async function (response) {
           // 4. Contact Backend: Verify Payment Signature
-          const verifyRes = await fetch('https://peekolitix.onrender.com/api/verify-payment', {
+          const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -103,10 +101,8 @@ const UpgradeModal = () => {
       rzp.open();
 
     } catch (err) {
-      console.error("Razorpay UI Error:", err);
-      // Fallback for Development (Simulate Upgrade if network is disconnected or Keys missing)
-      alert(`[DEVELOPER ALARM]: Razorpay failed to load (${err.message}). Bypassing gateway and applying clearance upgrade for testing.`);
-      upgradeTo(planKey);
+      console.error("Payment Error:", err);
+      alert('Payment could not be processed. Please try again or contact support.');
     }
   };
 

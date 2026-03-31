@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { supabase } from '../supabaseClient';
 
 const PremiumContext = createContext(null);
 
@@ -8,7 +9,11 @@ export const TIERS = {
   STUDENT: 'STUDENT',
   JOURNALIST: 'JOURNALIST',
   CONSULTANT: 'CONSULTANT',
+  DEV: 'DEV',
 };
+
+// Public tiers (visible to normal users)
+export const PUBLIC_TIERS = ['FREE', 'STUDENT', 'JOURNALIST', 'CONSULTANT'];
 
 export const TIER_CONFIG = {
   [TIERS.FREE]: {
@@ -17,7 +22,7 @@ export const TIER_CONFIG = {
     bg: 'rgba(173,181,189,0.15)',
     border: 'rgba(173,181,189,0.3)',
     dailyLimit: 15,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','BATTLE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','BATTLE','VERIFY','COMPARE'],
     premiumModes: [],
   },
   [TIERS.STUDENT]: {
@@ -27,7 +32,7 @@ export const TIER_CONFIG = {
     border: 'rgba(56,176,0,0.35)',
     price: '₹49/mo',
     dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','BATTLE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','BATTLE','VERIFY','COMPARE'],
     premiumModes: ['STUDENT_PREMIUM'],
   },
   [TIERS.JOURNALIST]: {
@@ -37,7 +42,7 @@ export const TIER_CONFIG = {
     border: 'rgba(244,162,97,0.35)',
     price: '₹199/mo',
     dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','BATTLE','SIMULATE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','BATTLE','SIMULATE','VERIFY','COMPARE'],
     premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM'],
   },
   [TIERS.CONSULTANT]: {
@@ -47,7 +52,16 @@ export const TIER_CONFIG = {
     border: 'rgba(199,125,255,0.35)',
     price: '₹499/mo',
     dailyLimit: Infinity,
-    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK', 'STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM', 'BATTLE', 'SIMULATE'],
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','CONSULTANT_PREMIUM','BATTLE','SIMULATE','VERIFY','COMPARE'],
+    premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM','CONSULTANT_PREMIUM'],
+  },
+  [TIERS.DEV]: {
+    label: 'Developer',
+    color: '#00ff88',
+    bg: 'rgba(0,255,136,0.1)',
+    border: 'rgba(0,255,136,0.35)',
+    dailyLimit: Infinity,
+    modesAllowed: ['DEBATE','STATS','EXPLAIN','GEO','QUICK','STUDENT_PREMIUM','JOURNALIST_PREMIUM','CONSULTANT_PREMIUM','BATTLE','SIMULATE','VERIFY','COMPARE'],
     premiumModes: ['STUDENT_PREMIUM','JOURNALIST_PREMIUM','CONSULTANT_PREMIUM'],
   },
 };
@@ -56,33 +70,50 @@ export const usePremium = () => useContext(PremiumContext);
 
 export const PremiumProvider = ({ children }) => {
   const [tier, setTier] = useState(TIERS.FREE);
+  const [activeTier, setActiveTier] = useState(TIERS.FREE); // For DEV tier switching
+  const [realTier, setRealTier] = useState(TIERS.FREE); // The actual DB tier
   const [queryCount, setQueryCount] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [targetTier, setTargetTier] = useState(null);
   const { user } = useAuth() || {};
 
-  // Restore tier from localStorage so developer can test freely
+  // Fetch tier from Supabase on login
   useEffect(() => {
-    const savedTier = localStorage.getItem('peekolitix_dev_tier');
-    if (savedTier && Object.keys(TIERS).includes(savedTier)) {
-      setTier(savedTier);
-    } else {
-      setTier(TIERS.FREE);
-    }
-  }, []);
+    if (!user?.id || !supabase) return;
+    const fetchTier = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('tier')
+        .eq('id', user.id)
+        .single();
+      if (data?.tier) {
+        const dbTier = data.tier;
+        setRealTier(dbTier);
+        setTier(dbTier);
+        setActiveTier(dbTier);
+      }
+    };
+    fetchTier();
+  }, [user]);
 
+  const isDev = realTier === TIERS.DEV;
 
-  const canQuery = () => {
-    const config = TIER_CONFIG[tier];
-    return queryCount < config.dailyLimit;
+  // DEV users can switch to any tier to test; normal users use their real tier
+  const effectiveTier = isDev ? activeTier : tier;
+  const effectiveConfig = TIER_CONFIG[effectiveTier] || TIER_CONFIG[TIERS.FREE];
+
+  const canQuery = () => effectiveConfig.dailyLimit === Infinity || queryCount < effectiveConfig.dailyLimit;
+  const incrementQuery = () => setQueryCount(c => c + 1);
+  const canAccessMode = (mode) => effectiveConfig.modesAllowed.includes(mode);
+
+  // DEV tier switching
+  const devSwitchTier = (newTier) => {
+    if (!isDev) return;
+    setActiveTier(newTier);
   };
 
-  const incrementQuery = () => setQueryCount(c => c + 1);
-
-  const canAccessMode = (mode) => TIER_CONFIG[tier].modesAllowed.includes(mode);
-
-  const openUpgradeModal = (tier = null) => {
-    setTargetTier(tier);
+  const openUpgradeModal = (t = null) => {
+    setTargetTier(t);
     setShowUpgradeModal(true);
   };
 
@@ -90,16 +121,17 @@ export const PremiumProvider = ({ children }) => {
 
   const upgradeTo = (newTier) => {
     setTier(newTier);
-    localStorage.setItem('peekolitix_dev_tier', newTier);
+    setActiveTier(newTier);
     setQueryCount(0);
     setShowUpgradeModal(false);
   };
 
   return (
     <PremiumContext.Provider value={{
-      tier, setTier, queryCount, canQuery, incrementQuery,
+      tier: effectiveTier, realTier, isDev, activeTier,
+      setTier, queryCount, canQuery, incrementQuery,
       canAccessMode, showUpgradeModal, openUpgradeModal, closeUpgradeModal,
-      upgradeTo, targetTier, TIER_CONFIG, TIERS
+      upgradeTo, devSwitchTier, targetTier, TIER_CONFIG, TIERS, PUBLIC_TIERS
     }}>
       {children}
     </PremiumContext.Provider>

@@ -4,35 +4,279 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import supabase from './src/config/supabase.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Strict Firewall: Only allow the Vercel frontend to query the Llama 70B Engine
+// ========================================================================
+// CORS FIREWALL — only allow known frontend origins
+// ========================================================================
 const corsOptions = {
-  origin: ['https://peekolitix.vercel.app', 'http://localhost:5174'],
+  origin: [
+    'https://peekolitix.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+  ],
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 
-console.log('🚀 Peekolitix Intelligence Engine v2.3 (70B Enforcer) Starting...');
+// ========================================================================
+// RATE LIMITING — 10 requests per minute per IP on the AI endpoint
+// ========================================================================
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: 'Rate limit exceeded. Try again in 60 seconds.' }
+});
 
+console.log('Peekolitix Intelligence Engine v2.4 (70B Enforcer) Starting...');
+
+// ========================================================================
+// ALLOWED MODES WHITELIST
+// ========================================================================
+const ALLOWED_MODES = ['DEBATE', 'STATS', 'EXPLAIN', 'GEO', 'QUICK', 'VERIFY', 'COMPARE', 'BATTLE', 'SIMULATE'];
+
+// ========================================================================
+// ALLOWED PREMIUM TIER KEYS
+// ========================================================================
+const ALLOWED_PREMIUM_KEYS = ['STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM', 'WAR ROOM'];
+
+// ========================================================================
+// SERVER-SIDE PLAN PRICES (INR) — never trust client-supplied amounts
+// ========================================================================
+const PLAN_PRICES = { STUDENT: 49, JOURNALIST: 199, CONSULTANT: 499 };
+
+// ========================================================================
+// DOMINANCE SCORE JSON DIRECTIVE — appended to every mode prompt
+// ========================================================================
+const DOMINANCE_SCORE_DIRECTIVE = `
+
+### MANDATORY JSON FOOTER ###
+At the very end of your response, you MUST output the following JSON block on its own line (no markdown fences):
+{ "dominanceScore": X, "biasLevel": "Low/Med/High", "winProbability": "X%" }
+Where X is an integer 1-10 rating of analytical dominance, biasLevel reflects detected slant, and winProbability is a debate-win estimate.`;
+
+// ========================================================================
+// FULL MODE INSTRUCTION MAP — each mode gets its own structured prompt
+// ========================================================================
+const MODE_INSTRUCTIONS = {
+  DEBATE: `You are Peekolitix in DEBATE mode. Produce the following sections with EXACT headers:
+
+## Executive Thesis
+A 2-3 sentence thesis summarizing the core political argument.
+
+## Structural Intelligence
+Provide exactly 4 numbered points of structural analysis (policy mechanics, institutional dynamics, fiscal data, constitutional implications).
+
+## Opponent Weakness Detection
+Provide exactly 3 items, each formatted as:
+**Argument:** [opponent claim]
+**Flaw:** [why it fails, with data]
+
+## Nerd Mode
+One deep-cut statistic or obscure policy detail that only an insider would know.
+
+## Debate Punchline
+A single devastating one-liner that wins the argument.
+
+## Sources
+Numbered list of verifiable Indian government or institutional sources (MoSPI, NITI Aayog, PRS Legislative, Election Commission, etc.).${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  STATS: `You are Peekolitix in STATS mode. Produce the following sections with EXACT headers:
+
+## Core Metrics
+List 4-6 key statistics with exact numbers, units, and source year.
+
+## Time Comparison
+Compare current values vs 5 and 10 years ago. Use a table format.
+
+## Trend Analysis
+Describe the trajectory — improving, declining, or stagnant — with supporting data.
+
+## Context
+Explain what these numbers actually mean for citizens on the ground.
+
+## Limitations
+Acknowledge data gaps, methodology issues, or contested figures.
+
+## Sources
+Numbered list of verifiable sources (MoSPI, RBI, World Bank, NITI Aayog, etc.).${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  EXPLAIN: `You are Peekolitix in EXPLAIN mode. Produce the following sections with EXACT headers:
+
+## Simple Explanation (ELI18)
+Explain the topic as if the reader is a smart 18-year-old Indian college student. Use simple language, no jargon.
+
+## How It Works
+Break down the mechanism / process / policy step by step.
+
+## Real World Example
+Give one concrete India-specific example that makes this tangible (reference a specific state, scheme, or event).
+
+## Why It Matters
+Explain the real-world impact on jobs, prices, rights, or governance.
+
+## Common Misconceptions
+List 2-3 things people commonly get wrong about this topic.
+
+## Sources
+Numbered list of verifiable sources.${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  GEO: `You are Peekolitix in GEO mode. Produce the following sections with EXACT headers:
+
+## Basic Profile
+State/region name, population, GDP, ruling party, key demographics.
+
+## Development Metrics
+HDI, literacy rate, per-capita income, urbanization %, key infrastructure stats.
+
+## Government Intervention
+Major central and state schemes active in this region, with budget allocations.
+
+## Growth Trend (10-15 Years)
+Trajectory of economic and social indicators over the past decade-plus. Use data points.
+
+## Comparative Insights
+Compare with 2-3 similar states/regions on key metrics.
+
+## Debate Angle
+How this region's data can be weaponized in a political debate (both sides).
+
+## Sources
+Numbered list of verifiable sources (Census, NITI Aayog, RBI State Finances, etc.).${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  QUICK: `You are Peekolitix in QUICK mode. Be extremely concise. Produce the following sections with EXACT headers:
+
+## 3 Bullet Facts
+- Fact 1
+- Fact 2
+- Fact 3
+
+## Key Stat
+One single killer statistic with source.
+
+## Punchline
+One sharp sentence that captures the essence.
+
+## Source
+One primary verifiable source.${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  VERIFY: `You are Peekolitix in VERIFY (Fact-Check) mode. Produce the following sections with EXACT headers:
+
+## Verdict
+State exactly one of: TRUE / PARTIALLY TRUE / FALSE / MISLEADING / UNVERIFIABLE
+
+## Claim Analyzed
+Restate the exact claim being fact-checked.
+
+## Actual Data
+Provide 3-4 data points that address the claim. Each must include:
+- The data point
+- Source (named institution)
+- Confidence level (High/Medium/Low)
+
+## Why It's Misleading
+Explain the specific logical, statistical, or contextual trick being used (if applicable). If the claim is TRUE, explain what nuance is still missing.
+
+## Correct Framing
+Rewrite the claim accurately based on the data.
+
+## Sources
+Numbered list of verifiable sources.${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  COMPARE: `You are Peekolitix in COMPARE mode. Produce the following sections with EXACT headers:
+
+## Versus Overview
+One paragraph framing the comparison and why it matters.
+
+## Head-to-Head Comparison
+A markdown table with 5-6 metrics as rows and the two entities as columns.
+
+## Strengths & Weaknesses
+### [Entity A]
+- Strengths: ...
+- Weaknesses: ...
+### [Entity B]
+- Strengths: ...
+- Weaknesses: ...
+
+## Context Most People Miss
+One overlooked factor that changes the comparison.
+
+## Verdict
+Declare a winner with reasoning, or explain why comparison is a false equivalence.
+
+## Debate Ammunition
+2 killer lines each side could use.
+
+## Sources
+Numbered list of verifiable sources.${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  BATTLE: `You are Peekolitix in BATTLE mode. You are an aggressive debate weapon. Produce the following sections with EXACT headers:
+
+## Argument Dismantled
+- **Opponent Claim:** [state their likely argument]
+- **Fallacy Detected:** [name the logical fallacy]
+- **Killing Stat:** [one statistic that destroys the claim, with source]
+- **Rhetorical Kill-Shot:** [one devastating sentence]
+
+## Data Debunking
+Provide exactly 3 numbered points, each disproving a common narrative with hard data and source.
+
+## Dominance Score
+Rate the analytical destruction on a scale of 1-10 and explain why.${DOMINANCE_SCORE_DIRECTIVE}`,
+
+  SIMULATE: `You are Peekolitix in SIMULATE mode. Create a simulated political debate with exactly 3 rounds. Use two opposing political archetypes relevant to the Indian context (e.g., "BJP Strategist" vs "Congress Analyst") plus a neutral Peekolitix intervener.
+
+## Round 1: Opening Salvo
+**[Archetype A]:** [their opening argument with data]
+**[Archetype B]:** [their counter-argument with data]
+**Peekolitix (Neutral):** [fact-check or context injection]
+
+## Round 2: Rebuttal
+**[Archetype A]:** [rebuttal with evidence]
+**[Archetype B]:** [counter-rebuttal with evidence]
+**Peekolitix (Neutral):** [deeper data point or correction]
+
+## Round 3: Closing Statement
+**[Archetype A]:** [closing argument]
+**[Archetype B]:** [closing argument]
+**Peekolitix (Neutral):** [final verdict with data summary]${DOMINANCE_SCORE_DIRECTIVE}`
+};
+
+// ========================================================================
+// PERSPECTIVE DIRECTIVES
+// ========================================================================
+const PERSPECTIVE_INSTRUCTIONS = {
+  NEUTRAL: 'Present a balanced, data-driven analysis. Give equal weight to positives and negatives. Do NOT lean toward any political party or ideology.',
+  PRO_GOV: 'Strengthen the positive interpretation of government actions and policies. Highlight achievements and favorable data. However, you MUST NOT fabricate data or suppress verified negatives entirely — acknowledge them briefly.',
+  ANTI_GOV: 'Highlight criticisms, failures, and unfulfilled promises. Emphasize gaps between claims and reality. However, you MUST NOT ignore valid positives or fabricate negative data — acknowledge genuine progress briefly.'
+};
+
+// ========================================================================
+// PREMIUM TIER DELIVERABLES
+// ========================================================================
 const GET_TIER_INSTRUCTION = (tier) => {
-  if (tier === 'STUDENT_PREMIUM') return `### 🎓 STUDENT PREMIUM DELIVERABLES (MANDATORY) ###
+  if (tier === 'STUDENT_PREMIUM') return `### STUDENT PREMIUM DELIVERABLES (MANDATORY) ###
 - [JAM/GD EVALUATOR]: Critical logic score (1-10) for this politician/policy.
 - [ELI18 SUMMARY]: Simplified analogy using cricket or college exams.
 - [DEBATE PUNCHLINES]: 3 high-impact rebuttals.`;
 
-  if (tier === 'JOURNALIST_PREMIUM') return `### 📰 JOURNALIST PREMIUM DELIVERABLES (MANDATORY) ###
+  if (tier === 'JOURNALIST_PREMIUM') return `### JOURNALIST PREMIUM DELIVERABLES (MANDATORY) ###
 - [RTI ANGLE]: 3 RTI queries to unlock hidden data.
 - [THE HIDDEN STORY]: 1 under-reported investigative angle.
 - [NEWS HEADLINE]: Compelling lead article opener.`;
 
-  if (tier === 'CONSULTANT_PREMIUM' || tier === 'WAR ROOM') return `### ⚔️ CONSULTANT/WAR ROOM DELIVERABLES (MANDATORY) ###
+  if (tier === 'CONSULTANT_PREMIUM' || tier === 'WAR ROOM') return `### CONSULTANT/WAR ROOM DELIVERABLES (MANDATORY) ###
 - [ALLIANCE RISK SCANNER]: Coalitional stability assessment.
 - [SWING FACTOR]: 3-5% voter block impact (caste/region) analysis.
 - [NARRATIVE STRESS TEST]: 3 logical cracks in the opponent's PR narrative.
@@ -41,24 +285,55 @@ const GET_TIER_INSTRUCTION = (tier) => {
   return "";
 };
 
-app.post('/api/ai/analyze-v2', async (req, res) => {
+// ========================================================================
+// AI ANALYSIS ENDPOINT — rate-limited, validated, perspective-aware
+// ========================================================================
+app.post('/api/ai/analyze-v2', aiLimiter, async (req, res) => {
   try {
-    const { query, mode, perspective, history = [], systemInstruction, premiumModeKey } = req.body;
+    const { query, mode, perspective = 'NEUTRAL', history = [], systemInstruction, premiumModeKey } = req.body;
 
-    console.log(`\n📊 New Request: Tier=${premiumModeKey || 'FREE'}`);
+    // FIX 5: Validate mode parameter against whitelist
+    if (!ALLOWED_MODES.includes(mode)) {
+      return res.status(400).json({ error: 'Invalid mode' });
+    }
+
+    // FIX 6: Server-side premium tier enforcement
+    // TODO: Add full JWT verification when Supabase auth is configured.
+    //       For now we validate that premiumModeKey is an expected value and log a warning.
+    //       Without JWT, a sophisticated client could spoof the key — this is a stopgap.
+    if (premiumModeKey && !ALLOWED_PREMIUM_KEYS.includes(premiumModeKey)) {
+      console.warn(`WARNING: Unknown premiumModeKey received: "${premiumModeKey}" — ignoring premium deliverables.`);
+    }
+    const validatedPremiumKey = (premiumModeKey && ALLOWED_PREMIUM_KEYS.includes(premiumModeKey)) ? premiumModeKey : null;
+
+    console.log(`\nNew Request: Mode=${mode} | Perspective=${perspective} | Tier=${validatedPremiumKey || 'FREE'}`);
 
     const chatHistory = history.map(h => ({
       role: "assistant",
       content: h.report || h.content || ''
     }));
 
-    const tierHeader = GET_TIER_INSTRUCTION(premiumModeKey);
-    const userPrompt = `You are a Senior Political Strategist. Perform a deep ${mode} analysis of: "${query}".
+    // Build the mode-specific system prompt
+    const modePrompt = MODE_INSTRUCTIONS[mode] || MODE_INSTRUCTIONS['DEBATE'];
 
-${tierHeader}
+    // Wire perspective into the system prompt
+    const perspectiveKey = ['NEUTRAL', 'PRO_GOV', 'ANTI_GOV'].includes(perspective) ? perspective : 'NEUTRAL';
+    const perspectivePrompt = PERSPECTIVE_INSTRUCTIONS[perspectiveKey];
 
-STRICT: You MUST output the above deliverables using the exact headers provided.
-STRICT: Avoid vague language. Use Indian official metrics (MPLADS, LGD, MoSPI).`;
+    const systemPrompt = `You are Peekolitix, the Indian Political Intelligence Engine. Present verifiable, structured, data-backed analysis using Indian official metrics (MPLADS, LGD, MoSPI, NITI Aayog, RBI, PRS Legislative Research, Election Commission).
+
+### PERSPECTIVE DIRECTIVE ###
+${perspectivePrompt}
+
+### MODE: ${mode} ###
+${modePrompt}`;
+
+    // Build the user prompt with optional premium tier deliverables
+    const tierHeader = GET_TIER_INSTRUCTION(validatedPremiumKey);
+    const userPrompt = `Perform a deep ${mode} analysis of: "${query}".
+
+${tierHeader ? tierHeader + '\n\nSTRICT: You MUST output the above premium deliverables using the exact headers provided.' : ''}
+STRICT: Avoid vague language. Use Indian official metrics and cite sources.`;
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
@@ -69,7 +344,7 @@ STRICT: Avoid vague language. Use Indian official metrics (MPLADS, LGD, MoSPI).`
       body: JSON.stringify({
         model: 'meta/llama-3.1-70b-instruct',
         messages: [
-          { role: 'system', content: `You are Peekolitix, the Indian Political Intelligence Engine. Present verifiable, structured, data-backed analysis.` },
+          { role: 'system', content: systemPrompt },
           ...chatHistory,
           { role: 'user', content: userPrompt }
         ],
@@ -89,18 +364,21 @@ STRICT: Avoid vague language. Use Indian official metrics (MPLADS, LGD, MoSPI).`
     });
 
   } catch (error) {
-    console.error(`❌ Error: ${error.message}`);
+    console.error(`Error: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ==== SECURE PERSISTENCE LAYER ====
+// ========================================================================
+// SECURE PERSISTENCE LAYER — all Supabase calls guarded
+// ========================================================================
 app.post('/api/save-briefing', async (req, res) => {
   try {
     const { query, mode, perspective, report, dominanceScore, biasLevel, winProbability, user_id } = req.body;
 
-    // SECURITY: Reject unsecured requests
     if (!user_id) return res.status(401).json({ error: "Unauthorized. User ID missing." });
+
+    if (!supabase) return res.json({ success: true, dev: true, message: 'Dev mode — Supabase not configured.' });
 
     const { error } = await supabase
       .from('debates')
@@ -119,8 +397,9 @@ app.post('/api/history', async (req, res) => {
   try {
     const { user_id } = req.body;
 
-    // SECURITY: Ensure absolute dashboard isolation
     if (!user_id) return res.status(401).json({ error: "Unauthorized. User ID missing." });
+
+    if (!supabase) return res.json({ success: true, history: [], dev: true, message: 'Dev mode — Supabase not configured.' });
 
     const { data, error } = await supabase
       .from('debates')
@@ -140,15 +419,26 @@ app.post('/api/history', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ==== RAZORPAY MONETIZATION ENGINE ====
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID, 
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// ========================================================================
+// RAZORPAY MONETIZATION ENGINE — guarded, validated, no insecure fallbacks
+// ========================================================================
+const razorpay = (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET)
+  ? new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET })
+  : null;
 
 app.post('/api/create-order', async (req, res) => {
   try {
-    const { amount, currency = 'INR', receipt } = req.body;
+    // FIX 8: Guard against missing Razorpay config
+    if (!razorpay) return res.status(503).json({ error: 'Payment system not configured' });
+
+    const { plan, currency = 'INR', receipt } = req.body;
+
+    // FIX 10: Server-side price enforcement — never trust client-supplied amounts
+    const planUpper = (plan || '').toUpperCase();
+    const amount = PLAN_PRICES[planUpper];
+    if (!amount) {
+      return res.status(400).json({ error: `Invalid plan: "${plan}". Allowed plans: ${Object.keys(PLAN_PRICES).join(', ')}` });
+    }
 
     const options = {
       amount: amount * 100, // Amount is in currency subunits (paise)
@@ -167,12 +457,21 @@ app.post('/api/create-order', async (req, res) => {
 
 app.post('/api/verify-payment', async (req, res) => {
   try {
+    // FIX 8: Guard against missing Razorpay config
+    if (!razorpay) return res.status(503).json({ error: 'Payment system not configured' });
+
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, user_id, plan_key } = req.body;
+
+    // FIX 9: No insecure fallback — reject if secret is missing
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(503).json({ error: 'Payment verification unavailable — secret not configured.' });
+    }
 
     // Secure cryptographic signature verification
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YOUR_SECRET_KEY')
+      .createHmac('sha256', secret)
       .update(body.toString())
       .digest('hex');
 
@@ -181,6 +480,12 @@ app.post('/api/verify-payment', async (req, res) => {
 
       // Upgrade the Analyst's Global Clearance in Supabase
       if (user_id && plan_key) {
+        // FIX 7: Guard Supabase call
+        if (!supabase) {
+          console.warn('Payment verified but Supabase not configured — cannot persist tier upgrade.');
+          return res.json({ success: true, message: 'Payment verified. Tier upgrade skipped (dev mode).' });
+        }
+
         const { error } = await supabase
           .from('profiles')
           .update({ tier: plan_key })
@@ -198,11 +503,20 @@ app.post('/api/verify-payment', async (req, res) => {
   }
 });
 
+// ========================================================================
+// STATUS PAGE — production-protected
+// ========================================================================
 app.get("/", (req, res) => {
+  if (IS_PRODUCTION) return res.status(404).json({ error: 'Not found' });
   res.redirect("/status");
 });
 
 app.get("/status", async (req, res) => {
+  // FIX 11: In production, hide the status page (require auth or return 404)
+  if (IS_PRODUCTION) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
   const uptime = Math.floor(process.uptime());
   const hours = Math.floor(uptime / 3600);
   const minutes = Math.floor((uptime % 3600) / 60);
@@ -210,18 +524,19 @@ app.get("/status", async (req, res) => {
 
   // --- REAL-TIME SERVICE PINGS ---
   let supabaseStatus = "PENDING...";
-  let nvidiaStatus = NVIDIA_API_KEY ? "✅ LOADED" : "❌ MISSING";
-  let razorpayStatus = process.env.RAZORPAY_KEY_ID ? "✅ ACTIVE" : "❌ INACTIVE";
+  let nvidiaStatus = NVIDIA_API_KEY ? "LOADED" : "MISSING";
+  let razorpayStatus = process.env.RAZORPAY_KEY_ID ? "ACTIVE" : "INACTIVE";
 
   try {
+    if (!supabase) throw new Error("Not configured");
     const { data, error } = await supabase.from('profiles').select('id').limit(1);
     if (error) throw error;
-    supabaseStatus = "✅ CONNECTED";
+    supabaseStatus = "CONNECTED";
   } catch (err) {
     console.error("Status Ping Error (Supabase):", err.message);
-    supabaseStatus = "❌ CONNECTION FAILED";
+    supabaseStatus = "CONNECTION FAILED";
   }
-  
+
   const healthHtml = `
   <!DOCTYPE html>
   <html lang="en">
@@ -271,19 +586,19 @@ app.get("/status", async (req, res) => {
   </head>
   <body>
     <div class="dashboard">
-      <h1><div class="pulse"></div>INTEGRITY AUDIT: V2.3 ACTIVE</h1>
+      <h1><div class="pulse"></div>INTEGRITY AUDIT: V2.4 ACTIVE</h1>
       <div class="stat-grid">
         <div class="stat-card">
           <div class="label">Supabase Database</div>
-          <div class="value ${supabaseStatus.includes('✅') ? 'status-pass' : 'status-fail'}">${supabaseStatus}</div>
+          <div class="value ${supabaseStatus === 'CONNECTED' ? 'status-pass' : 'status-fail'}">${supabaseStatus}</div>
         </div>
         <div class="stat-card">
           <div class="label">NVIDIA AI Engine</div>
-          <div class="value ${nvidiaStatus.includes('✅') ? 'status-pass' : 'status-fail'}">${nvidiaStatus}</div>
+          <div class="value ${nvidiaStatus === 'LOADED' ? 'status-pass' : 'status-fail'}">${nvidiaStatus}</div>
         </div>
         <div class="stat-card">
           <div class="label">Razorpay Gateway</div>
-          <div class="value ${razorpayStatus.includes('✅') ? 'status-pass' : 'status-fail'}">${razorpayStatus}</div>
+          <div class="value ${razorpayStatus === 'ACTIVE' ? 'status-pass' : 'status-fail'}">${razorpayStatus}</div>
         </div>
         <div class="stat-card">
           <div class="label">Process Uptime</div>
@@ -300,4 +615,4 @@ app.get("/status", async (req, res) => {
   res.send(healthHtml);
 });
 
-app.listen(PORT, () => console.log(`✅ PEAKOLITIX V2.3 ACTIVE (70B): http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`PEEKOLITIX V2.4 ACTIVE (70B): http://localhost:${PORT}`));
