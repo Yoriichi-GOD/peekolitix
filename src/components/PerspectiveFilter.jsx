@@ -4,9 +4,9 @@ import { Eye, Shield, AlertTriangle } from 'lucide-react';
 
 const PerspectiveFilter = ({ currentPerspective, setPerspective }) => {
   const perspectives = [
-    { id: 'NEUTRAL', label: 'Neutral Analysis', icon: Eye, colorClass: 'neutral' },
-    { id: 'PRO_GOV', label: 'Pro-Gov Emphasis', icon: Shield, colorClass: 'pro' },
-    { id: 'ANTI_GOV', label: 'Critical Review', icon: AlertTriangle, colorClass: 'anti' }
+    { id: 'NEUTRAL', label: 'Neutral', fullLabel: 'Neutral Analysis', icon: Eye, colorClass: 'neutral' },
+    { id: 'PRO_GOV', label: 'Pro-Gov', fullLabel: 'Pro-Gov Emphasis', icon: Shield, colorClass: 'pro' },
+    { id: 'ANTI_GOV', label: 'Critical', fullLabel: 'Critical Review', icon: AlertTriangle, colorClass: 'anti' }
   ];
 
   return (
@@ -21,9 +21,10 @@ const PerspectiveFilter = ({ currentPerspective, setPerspective }) => {
               key={p.id}
               className={`filter-btn ${isActive ? `active ${p.colorClass}` : ''}`}
               onClick={() => setPerspective(p.id)}
+              title={p.fullLabel}
             >
               <Icon size={14} className="filter-icon" />
-              {p.label}
+              <span className="btn-text">{p.label}</span>
             </button>
           );
         })}

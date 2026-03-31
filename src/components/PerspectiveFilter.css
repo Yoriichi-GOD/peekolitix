@@ -32,6 +32,7 @@
   background-color: transparent;
   border: 1px solid transparent;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .filter-btn:hover {
@@ -54,4 +55,48 @@
   background-color: rgba(208, 0, 0, 0.15);
   color: var(--status-anti);
   border-color: rgba(208, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .perspective-filter {
+    gap: 0px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  
+  .filter-label {
+    display: none;
+  }
+  
+  .filter-buttons {
+    gap: 4px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .filter-btn {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    opacity: 0.6;
+  }
+  
+  .filter-btn.active {
+    opacity: 1;
+    background: rgba(199, 125, 255, 0.1) !important;
+    border: 1px solid rgba(199, 125, 255, 0.2) !important;
+  }
+
+  .filter-btn.active.neutral { color: var(--status-neutral); }
+  .filter-btn.active.pro { color: var(--status-pro); }
+  .filter-btn.active.anti { color: var(--status-anti); }
+  
+  .filter-btn .filter-icon {
+    display: none;
+  }
 }

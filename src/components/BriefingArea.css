@@ -33,6 +33,10 @@
   border: 1px solid rgba(157, 78, 221, 0.3);
 }
 
+.mode-text-compact {
+  display: none;
+}
+
 .briefing-content {
   flex: 1;
   padding: 24px;
@@ -197,32 +201,29 @@
 
 @media (max-width: 768px) {
   .briefing-header {
-    padding: 12px 16px;
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 8px 12px;
+    flex-direction: row; /* KEEP ROW FOR COMPACT LOOK */
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
   }
   
-  .perspective-selector {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-    display: flex !important;
-    gap: 8px;
-    justify-content: flex-start !important;
+  .mobile-hidden, .mobile-hidden-icon, .mode-text-full {
+    display: none !important;
   }
 
-  .perspective-selector::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for cleaner look */
-  }
-
-  .mode-badge {
-    align-self: flex-start;
-  }
-  
-  .mode-badge {
+  .mode-text-compact {
+    display: inline;
     font-size: 0.75rem;
-    padding: 4px 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .mode-badge {
+    padding: 4px 6px;
+    background: transparent;
+    border: none;
+    flex-shrink: 0;
   }
 
   .briefing-content {
@@ -230,20 +231,21 @@
   }
 
   .query-section {
-    padding: 16px;
+    padding: 12px;
   }
 
   .query-form {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   .submit-btn {
-    padding: 16px;
+    padding: 14px;
     justify-content: center;
   }
   
   .query-input {
     font-size: 0.95rem;
+    padding: 12px 0;
   }
 }

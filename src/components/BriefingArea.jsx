@@ -31,18 +31,36 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
     }
   };
 
+  const getCompactModeTitle = () => {
+    switch (currentMode) {
+      case 'DEBATE': return 'ANALYSIS';
+      case 'STATS': return 'DATA';
+      case 'EXPLAIN': return 'POLICY';
+      case 'GEO': return 'IMPACT';
+      case 'QUICK': return 'RAPID';
+      case 'STUDENT_PREMIUM': return 'STUDENT';
+      case 'JOURNALIST_PREMIUM': return 'SOURCE';
+      case 'CONSULTANT_PREMIUM': return 'WAR ROOM';
+      case 'BATTLE': return 'BATTLE';
+      case 'SIMULATE': return 'ARENA';
+      default: return 'INTEL';
+    }
+  };
+
   const getPlaceholder = () => {
     if (currentMode === 'BATTLE') return "Paste the opponent's claim/argument here to destroy it...";
     if (currentMode === 'SIMULATE') return "Describe the debate scenario (e.g., BJP vs Congress on Jobs)...";
-    return `Enter subject for ${getModeTitle()}...`;
+    return `Enter subject for ${getCompactModeTitle()}...`;
   };
 
   return (
     <main className="briefing-area">
       <div className="briefing-header">
         <div className="mode-badge">
-          <Terminal size={14} />
-          <span>MODE: {getModeTitle()}</span>
+          <Terminal size={14} className="mobile-hidden-icon" />
+          <span className="mode-label mobile-hidden">MODE: </span>
+          <span className="mode-text-full">{getModeTitle()}</span>
+          <span className="mode-text-compact">{getCompactModeTitle()}</span>
         </div>
         <PerspectiveFilter 
           currentPerspective={currentPerspective} 
