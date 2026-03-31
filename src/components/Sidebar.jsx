@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  MessageSquare, 
-  Radio, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
   History,
-  BookOpen,
-  PieChart,
-  Globe,
-  Zap,
-  Swords,
   Layers,
   GraduationCap,
   Newspaper,
@@ -19,8 +13,7 @@ import {
   Lock,
   Target,
   Users,
-  ShieldAlert,
-  Scale,
+  Zap,
   Power,
   User as UserIcon,
   X as CloseIcon
@@ -36,26 +29,16 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
-  const baseChannels = [
-    { id: 'DEBATE', label: 'Pro/Con Analysis', icon: Swords },
-    { id: 'STATS', label: 'Data & Trends', icon: PieChart },
-    { id: 'EXPLAIN', label: 'Policy Breakdown', icon: BookOpen },
-    { id: 'GEO', label: 'Global Impact', icon: Globe },
-    { id: 'QUICK', label: 'Rapid Response', icon: Zap },
-    { id: 'VERIFY', label: 'Veracity Check', icon: ShieldAlert },
-    { id: 'COMPARE', label: 'Side-by-Side', icon: Scale },
-  ];
-
   const premiumChannels = [
-    { 
+    {
       id: 'STUDENT_PREMIUM', label: 'Debate Pack', icon: GraduationCap,
       tier: TIERS.STUDENT, color: '#38b000', border: 'rgba(56,176,0,0.3)',
     },
-    { 
+    {
       id: 'JOURNALIST_PREMIUM', label: 'Source Engine', icon: Newspaper,
       tier: TIERS.JOURNALIST, color: '#f4a261', border: 'rgba(244,162,97,0.3)',
     },
-    { 
+    {
       id: 'CONSULTANT_PREMIUM', label: 'War Room', icon: Briefcase,
       tier: TIERS.CONSULTANT, color: '#c77dff', border: 'rgba(199,125,255,0.3)',
     },
@@ -85,7 +68,6 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
         {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </div>
 
-      {/* Mobile Close Button */}
       {isMobileOpen && (
         <div className="mobile-close-container">
           <span className="mobile-drawer-title">COMMAND HUB</span>
@@ -109,42 +91,6 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
         </motion.div>
       )}
 
-      <div className="sidebar-section">
-        {!isCollapsed && <h3 className="section-title"><Radio size={14} /> INTELLIGENCE MODES</h3>}
-        {isCollapsed && <div className="collapsed-icon"><Radio size={18} className="brand-icon" /></div>}
-        
-        <ul className="nav-list">
-          {baseChannels.map((channel) => {
-            const Icon = channel.icon;
-            const isActive = currentMode === channel.id;
-            return (
-              <li 
-                key={channel.id} 
-                className={`nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => setMode(channel.id)}
-                title={isCollapsed ? channel.label : ''}
-              >
-                <Icon size={18} className={isActive ? 'active-icon' : ''} />
-                {!isCollapsed && <span>{channel.label}</span>}
-              </li>
-            );
-          })}
-        </ul>
-
-        {history.length > 0 && (
-          <button
-            className={`synthesize-btn ${isCollapsed ? 'synthesize-collapsed' : ''}`}
-            onClick={onSynthesize}
-            title="Combine History"
-          >
-            <Layers size={18} />
-            {!isCollapsed && <span>COMBINE HISTORY</span>}
-          </button>
-        )}
-      </div>
-
-      <div className="sidebar-separator" />
-
       {/* Premium modes */}
       <div className="sidebar-section">
         {!isCollapsed && <h3 className="section-title"><Star size={14} style={{ color: '#ffd166' }} /> PREMIUM MODES</h3>}
@@ -154,8 +100,8 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
             const isActive = currentMode === channel.id;
             const hasAccess = canAccessMode(channel.id);
             return (
-              <li 
-                key={channel.id} 
+              <li
+                key={channel.id}
                 className={`nav-item premium-nav-item ${isActive ? 'active' : ''} ${!hasAccess ? 'premium-locked' : ''}`}
                 style={ hasAccess ? { '--pm-color': channel.color, '--pm-border': channel.border } : {} }
                 onClick={() => handleModeClick(channel)}
@@ -186,8 +132,8 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
             const Icon = channel.icon;
             const isActive = currentMode === channel.id;
             return (
-              <li 
-                key={channel.id} 
+              <li
+                key={channel.id}
                 className={`nav-item ${isActive ? 'active' : ''}`}
                 style={ isActive ? { '--pm-color': channel.color, '--pm-border': channel.border } : {} }
                 onClick={() => setMode(channel.id)}
@@ -203,10 +149,11 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
 
       <div className="sidebar-separator" />
 
+      {/* History */}
       <div className="sidebar-section h-full">
         {!isCollapsed && <h3 className="section-title"><History size={14} /> RECENT BRIEFINGS</h3>}
         {isCollapsed && <div className="collapsed-icon"><History size={18} className="brand-icon"/></div>}
-        
+
         <ul className="nav-list briefing-list">
           {history.length === 0 && !isCollapsed && (
             <div className="empty-history text-muted" style={{ fontSize: '0.8rem', fontStyle: 'italic', padding: '10px' }}>
@@ -214,9 +161,9 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
             </div>
           )}
           {[...history].reverse().map((item) => (
-            <li 
-              key={item.id} 
-              className="nav-item briefing-item" 
+            <li
+              key={item.id}
+              className="nav-item briefing-item"
               title={item.query}
               onClick={() => onSelectHistory(item)}
             >
@@ -225,7 +172,19 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
             </li>
           ))}
         </ul>
+
+        {history.length > 0 && (
+          <button
+            className={`synthesize-btn ${isCollapsed ? 'synthesize-collapsed' : ''}`}
+            onClick={onSynthesize}
+            title="Combine History"
+          >
+            <Layers size={18} />
+            {!isCollapsed && <span>COMBINE HISTORY</span>}
+          </button>
+        )}
       </div>
+
       <div className="sidebar-footer">
         {!isCollapsed && user && (
           <div className="analyst-profile glass-panel">

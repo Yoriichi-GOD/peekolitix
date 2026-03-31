@@ -27,7 +27,7 @@ const PREMIUM_MODE_BASE = {
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 
 function Dashboard() {
-  const [currentMode, setMode] = useState('DEBATE');
+  const [currentMode, setMode] = useState('CHAT');
   const [currentPerspective, setPerspective] = useState('NEUTRAL');
   const [isLoading, setIsLoading] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
@@ -229,8 +229,9 @@ function Dashboard() {
         <Header user={user} />
         
         <div className="content-grid">
-          <BriefingArea 
+          <BriefingArea
             currentMode={currentMode}
+            setMode={setMode}
             currentPerspective={currentPerspective}
             setPerspective={setPerspective}
             onQuerySubmit={handleQuerySubmit}

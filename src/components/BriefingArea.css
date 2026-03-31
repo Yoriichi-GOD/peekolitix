@@ -195,6 +195,93 @@
   to { width: 40%; transform: translateX(150px); }
 }
 
+/* ===== TOOLS BAR ===== */
+.tools-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tools-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(157, 78, 221, 0.1);
+  border: 1px solid rgba(157, 78, 221, 0.25);
+  color: var(--brand-purple-hover);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tools-toggle:hover {
+  background: rgba(157, 78, 221, 0.2);
+}
+
+.tools-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tool-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tool-chip:hover {
+  border-color: rgba(157, 78, 221, 0.4);
+  color: var(--text-primary);
+  background: rgba(157, 78, 221, 0.08);
+}
+
+.tool-chip-active {
+  background: rgba(157, 78, 221, 0.15);
+  border-color: var(--brand-purple);
+  color: var(--brand-purple-hover);
+  box-shadow: 0 0 8px rgba(157, 78, 221, 0.2);
+}
+
+.tool-chip-active:hover {
+  background: rgba(157, 78, 221, 0.25);
+}
+
+.tool-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.tool-clear:hover {
+  color: var(--status-anti, #ef476f);
+  background: rgba(239, 71, 111, 0.1);
+}
+
 .intelligence-report {
   color: var(--text-primary);
   line-height: 1.7;
@@ -264,5 +351,21 @@
   .query-input {
     font-size: 0.95rem;
     padding: 12px 0;
+  }
+
+  .tools-bar {
+    margin-bottom: 8px;
+  }
+
+  .tools-chips {
+    display: none;
+  }
+
+  .tools-chips.tools-expanded {
+    display: flex;
+  }
+
+  .tools-toggle-label {
+    display: inline;
   }
 }
