@@ -67,7 +67,7 @@ export const PremiumProvider = ({ children }) => {
     // Define emails here OR in your .env file
     const devEmails = import.meta.env.VITE_DEV_EMAILS 
       ? import.meta.env.VITE_DEV_EMAILS.split(',') 
-      : ["your-email@gmail.com", "co-founder-email@gmail.com"];
+      : ["nrgenosop@gmail.com", "abhaysinghnagarkoti11@gmail.com"];
 
     if (user?.email && devEmails.includes(user.email)) {
       setTier(TIERS.CONSULTANT);
