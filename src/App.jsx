@@ -40,17 +40,21 @@ function Dashboard() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/history`);
+        const response = await fetch(`${BACKEND_URL}/api/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user?.id })
+        });
         const data = await response.json();
         if (data.success) {
           setHistory(data.history);
         }
       } catch (err) {
-        console.error("Failed to load history from Supabase", err);
+        console.error("Failed to load history securely", err);
       }
     };
-    fetchHistory();
-  }, []);
+    if (user?.id) fetchHistory();
+  }, [user]);
 
   const handleQuerySubmit = async (query) => {
     if (!canQuery()) {
@@ -109,13 +113,14 @@ function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          user_id: user?.id,
           query,
           mode: currentMode,
           perspective: currentPerspective,
           report: cleanMarkdown,
           ...dominanceData
         })
-      }).catch(err => console.error("Supabase sync failed", err));
+      }).catch(err => console.error("Secure Supabase sync failed", err));
       
       let reportEl;
       if (currentMode === 'SIMULATE') {

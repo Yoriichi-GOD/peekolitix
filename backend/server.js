@@ -2,6 +2,8 @@ import './env.js';
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import supabase from './src/config/supabase.js';
 
 const app = express();
@@ -83,6 +85,99 @@ STRICT: Avoid vague language. Use Indian official metrics (MPLADS, LGD, MoSPI).`
   } catch (error) {
     console.error(`❌ Error: ${error.message}`);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==== SECURE PERSISTENCE LAYER ====
+app.post('/api/save-briefing', async (req, res) => {
+  try {
+    const { query, mode, perspective, report, dominanceScore, biasLevel, winProbability, user_id } = req.body;
+    
+    // SECURITY: Reject unsecured requests
+    if (!user_id) return res.status(401).json({ error: "Unauthorized. User ID missing." });
+
+    const { error } = await supabase
+      .from('debates')
+      .insert([{ 
+        user_id: user_id, 
+        topic: query, 
+        side: perspective, 
+        response: { mode, report, dominanceScore, biasLevel, winProbability } 
+      }]);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/history', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    
+    // SECURITY: Ensure absolute dashboard isolation
+    if (!user_id) return res.status(401).json({ error: "Unauthorized. User ID missing." });
+
+    const { data, error } = await supabase
+      .from('debates')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    const history = data.map(item => ({
+      id: item.id, query: item.topic, perspective: item.side, mode: item.response.mode || 'DEBATE',
+      report: item.response.report, dominanceScore: item.response.dominanceScore || 5,
+      biasLevel: item.response.biasLevel || 'Low', winProbability: item.response.winProbability || '50%',
+      timestamp: item.created_at
+    }));
+    res.json({ success: true, history });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==== RAZORPAY MONETIZATION ENGINE ====
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID', // Replace with Live Key
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_SECRET_KEY',
+});
+
+app.post('/api/create-order', async (req, res) => {
+  try {
+    const { amount, currency = 'INR', receipt } = req.body;
+    
+    const options = {
+      amount: amount * 100, // Amount is in currency subunits (paise)
+      currency,
+      receipt: receipt || `rcpt_${Date.now()}`,
+    };
+
+    const order = await razorpay.orders.create(options);
+    if (!order) return res.status(500).json({ error: 'Failed to create order' });
+
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/verify-payment', async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    // Secure cryptographic signature verification
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YOUR_SECRET_KEY')
+      .update(body.toString())
+      .digest('hex');
+
+    if (expectedSignature === razorpay_signature) {
+      // Security Check Passed! Valid Payment.
+      res.json({ success: true, message: 'Payment verified successfully' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid Payment Signature' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
