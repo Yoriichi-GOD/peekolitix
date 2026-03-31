@@ -8,7 +8,7 @@ import supabase from './src/config/supabase.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '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';
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
 app.use(cors());
 app.use(express.json());
