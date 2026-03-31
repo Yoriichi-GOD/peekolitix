@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const PremiumContext = createContext(null);
 
@@ -58,6 +59,16 @@ export const PremiumProvider = ({ children }) => {
   const [queryCount, setQueryCount] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [targetTier, setTargetTier] = useState(null);
+  const { user } = useAuth() || {};
+
+  // Automatically elevate clearance if user is logged in
+  useEffect(() => {
+    if (user) {
+      setTier(TIERS.CONSULTANT);
+    } else {
+      setTier(TIERS.FREE);
+    }
+  }, [user]);
 
   const canQuery = () => {
     const config = TIER_CONFIG[tier];

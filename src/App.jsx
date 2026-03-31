@@ -198,7 +198,7 @@ function Dashboard() {
       />
       
       <div className="main-content">
-        <Header />
+        <Header user={user} />
         
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <BriefingArea 
