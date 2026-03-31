@@ -1,86 +1,56 @@
 import './env.js';
-
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import supabase from './src/config/supabase.js';
 
-console.log("ENV CHECK:", process.env.SUPABASE_URL);
-
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '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';
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-console.log('🚀 Backend starting...');
-console.log(`API Key loaded: ${NVIDIA_API_KEY ? '✓' : '✗'}`);
+console.log('🚀 Peekolitix Intelligence Engine v2.3 (70B Enforcer) Starting...');
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date(),
-    backend: 'running'
-  });
-});
+const GET_TIER_INSTRUCTION = (tier) => {
+  if (tier === 'STUDENT_PREMIUM') return `### 🎓 STUDENT PREMIUM DELIVERABLES (MANDATORY) ###
+- [JAM/GD EVALUATOR]: Critical logic score (1-10) for this politician/policy.
+- [ELI18 SUMMARY]: Simplified analogy using cricket or college exams.
+- [DEBATE PUNCHLINES]: 3 high-impact rebuttals.`;
+  
+  if (tier === 'JOURNALIST_PREMIUM') return `### 📰 JOURNALIST PREMIUM DELIVERABLES (MANDATORY) ###
+- [RTI ANGLE]: 3 RTI queries to unlock hidden data.
+- [THE HIDDEN STORY]: 1 under-reported investigative angle.
+- [NEWS HEADLINE]: Compelling lead article opener.`;
 
-// Main analysis endpoint
-app.post('/api/analyze', async (req, res) => {
+  if (tier === 'CONSULTANT_PREMIUM' || tier === 'WAR ROOM') return `### ⚔️ CONSULTANT/WAR ROOM DELIVERABLES (MANDATORY) ###
+- [ALLIANCE RISK SCANNER]: Coalitional stability assessment.
+- [SWING FACTOR]: 3-5% voter block impact (caste/region) analysis.
+- [NARRATIVE STRESS TEST]: 3 logical cracks in the opponent's PR narrative.
+- [STRATEGIC ASYMMETRY]: Local power imbalance evaluation.`;
+
+  return "";
+};
+
+app.post('/api/ai/analyze-v2', async (req, res) => {
   try {
-    const { query, mode, perspective } = req.body;
+    const { query, mode, perspective, history = [], systemInstruction, premiumModeKey } = req.body;
 
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
-    }
+    console.log(`\n📊 New Request: Tier=${premiumModeKey || 'FREE'}`);
 
-    console.log(`\n📊 New Request:`);
-    console.log(`Query: ${query.substring(0, 50)}...`);
-    console.log(`Mode: ${mode || 'debate'}`);
-    console.log(`Perspective: ${perspective || 'neutral'}`);
+    const chatHistory = history.map(h => ({
+      role: "assistant",
+      content: h.report || h.content || ''
+    }));
 
-    const systemPrompt = `You are an Indian Political Intelligence Engine. Your purpose is:
-1. Present verifiable, structured, data-backed analysis
-2. Break down narratives into measurable components
-3. Expose weaknesses in arguments
-4. Provide both sides when required
-5. Maintain strict neutrality unless a perspective is explicitly selected
+    const tierHeader = GET_TIER_INSTRUCTION(premiumModeKey);
+    const userPrompt = `You are a Senior Political Strategist. Perform a deep ${mode} analysis of: "${query}".
 
-RULES:
-* Always distinguish between FACT, INTERPRETATION, and NARRATIVE
-* Prefer Indian government sources (PIB, MoSPI, RBI, PRS, Census)
-* Use global sources (World Bank, IMF) only when relevant
-* Never make vague claims without quantification
-* Avoid emotional language
-* If data is uncertain, explicitly say so
+${tierHeader}
 
-PERSPECTIVE: ${perspective === 'neutral' ? 'Neutral - balanced output' : perspective === 'pro-govt' ? 'Pro-Government - strengthen positive interpretation but do NOT fabricate data' : 'Anti-Government - highlight criticisms but do NOT ignore valid positives'}
-
-OUTPUT STYLE:
-* Structured
-* Numbered points
-* Clear headings
-* Debate-ready
-* No fluff
-
-Return ONLY valid JSON (no markdown wrapper, no code blocks) with these fields:
-- affirmative: array of strings (3-5 strong data-backed points)
-- negative: array of strings (3-5 strong counterpoints)
-- keyData: array of strings (quantified facts only)
-- weakness: string (identify common flawed arguments and why they fail)
-- punchline: string (1-2 sharp, viral-ready lines)
-- conclusion: string (balanced synthesis)`;
-
-    const userPrompt = `Analyze this query using ${mode || 'debate'} mode with ${perspective || 'neutral'} perspective:
-
-"${query}"
-
-Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline, conclusion`;
-
-    console.log('🌐 Calling NVIDIA API...');
+STRICT: You MUST output the above deliverables using the exact headers provided.
+STRICT: Avoid vague language. Use Indian official metrics (MPLADS, LGD, MoSPI).`;
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
@@ -89,180 +59,31 @@ Return ONLY valid JSON with: affirmative, negative, keyData, weakness, punchline
         'Authorization': `Bearer ${NVIDIA_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'meta/llama-2-70b-chat',
+        model: 'meta/llama-3.1-70b-instruct',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: `You are Peekolitix, the Indian Political Intelligence Engine. Present verifiable, structured, data-backed analysis.` },
+          ...chatHistory,
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
-        top_p: 0.7,
-        max_tokens: 2000,
+        temperature: 0.1,
+        top_p: 1.0,
+        max_tokens: 3500,
       }),
     });
 
-    console.log(`API Response Status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error(`❌ NVIDIA API Error ${response.status}:`, errorData);
-      return res.status(response.status).json({
-        error: `NVIDIA API Error: ${response.status}`,
-        details: errorData,
-        message: 'Failed to get analysis from NVIDIA API'
-      });
-    }
-
     const data = await response.json();
-
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('❌ Invalid response structure from NVIDIA API');
-      return res.status(500).json({
-        error: 'Invalid API response structure',
-        received: data
-      });
-    }
-
-    const content = data.choices[0].message.content;
-    console.log(`✅ Got response (${content.length} chars)`);
-
-    // Parse JSON from response
-    let parsedData;
-    try {
-      // Try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsedData = JSON.parse(jsonMatch[0]);
-        console.log('✅ JSON parsed successfully');
-      } else {
-        parsedData = JSON.parse(content);
-        console.log('✅ Content parsed as JSON');
-      }
-    } catch (parseError) {
-      console.warn('⚠️ JSON parse failed, using content as fallback');
-      parsedData = {
-        affirmative: [content.substring(0, 300)],
-        negative: [],
-        keyData: [content.substring(300, 600)],
-        weakness: 'See analysis above',
-        punchline: 'Data-backed analysis generated',
-        conclusion: content.substring(600, 1000) || 'See analysis above',
-      };
-    }
-
-    console.log(`✅ Analysis complete - sending response\n`);
+    if (!response.ok) throw new Error(data.error?.message || "NVIDIA Engine Error");
 
     res.json({
       success: true,
-      data: parsedData,
-      timestamp: new Date(),
-      query: query
+      content: data.choices[0].message.content,
+      usage: data.usage
     });
 
   } catch (error) {
-    console.error(`\n❌ Server Error: ${error.message}`);
-    console.error('Stack:', error.stack);
-    res.status(500).json({
-      error: 'Server error',
-      message: error.message,
-      type: error.constructor.name
-    });
-  }
-});
-
-// PERSISTENCE ENDPOINTS
-// Save a new briefing
-app.post('/api/save-briefing', async (req, res) => {
-  try {
-    const { query, mode, perspective, report, dominanceScore, biasLevel, winProbability } = req.body;
-    
-    const { data, error } = await supabase
-      .from('debates')
-      .insert([
-        {
-          topic: query,
-          side: perspective,
-          response: { 
-            mode: mode || 'DEBATE',
-            report, 
-            dominanceScore, 
-            biasLevel, 
-            winProbability 
-          }
-        }
-      ])
-      .select();
-
-    if (error) throw error;
-    res.json({ success: true, data: data[0] });
-  } catch (error) {
-    console.error('❌ Save Error:', error.message);
+    console.error(`❌ Error: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Fetch intelligence history
-app.get('/api/history', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('debates')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    // Transform for frontend
-    const history = data.map(item => ({
-      id: item.id,
-      query: item.topic,
-      perspective: item.side,
-      mode: item.response.mode || 'DEBATE',
-      report: item.response.report,
-      dominanceScore: item.response.dominanceScore || 5,
-      biasLevel: item.response.biasLevel || 'Low',
-      winProbability: item.response.winProbability || '50%',
-      timestamp: item.created_at
-    }));
-
-    res.json({ success: true, history });
-  } catch (error) {
-    console.error('❌ Fetch Error:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log('\n' + '='.repeat(60));
-  console.log('🚀 POLITICAL INTELLIGENCE BACKEND');
-  console.log('='.repeat(60));
-  console.log(`✅ Server running on: http://localhost:${PORT}`);
-  console.log(`📊 API endpoint:     POST /api/analyze`);
-  console.log(`🏥 Health check:     GET /health`);
-  console.log('='.repeat(60));
-  console.log('Waiting for requests...\n');
-});
-
-
-app.get('/test-db', async (req, res) => {
-  const { data, error } = await supabase
-    .from('debates')
-    .insert([
-      {
-        topic: 'test topic',
-        side: 'government',
-        response: { msg: 'db connected' }
-      }
-    ]);
-
-  if (error) {
-    console.log(error);
-    return res.status(500).json({ error });
-  }
-
-  res.json({ success: true, data });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
+app.listen(PORT, () => console.log(`✅ PEAKOLITIX V2.3 ACTIVE (70B): http://localhost:${PORT}\n`));

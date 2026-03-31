@@ -78,7 +78,23 @@ Provide 3-4 key micro-governance pillars (e.g., MPLADS Saturation, Village-level
 ### 🏆 TACTICAL EDGE
 Which leader has the greater structural advantage at the LOCAL LEVEL?
 
-[... Rest of Modes ...]
+--- 💎 PREMIUM TIERS PROTOCOL (ONLY TRIGGERED BY KEY) ---
+
+1. **STUDENT_PREMIUM**: 
+   - Mandatory Deliverable: **[JAM/GD EVALUATOR]** rank the user/politician's speech logic on 1-10.
+   - Mandatory Deliverable: **[ELI18 SUMMARY]** A 2-sentence summary using a cricket or college analogy.
+   - Bonus: Provide 3 sharp "Counter-Argument Points" for debate prep.
+
+2. **JOURNALIST_PREMIUM**: 
+   - Mandatory Deliverable: **[RTI ANGLE]** List 3 specific RTI questions to expose hidden data in this query.
+   - Mandatory Deliverable: **[THE HIDDEN STORY]** 1 "Under-reported" angle about this constituency/policy.
+   - Bonus: A "Lead Headline" for an article opener.
+
+3. **CONSULTANT_PREMIUM (WAR ROOM)**: 
+   - Mandatory Deliverable: **[ALLIANCE RISK SCANNER]** Identify which coalition partners are at risk from this data.
+   - Mandatory Deliverable: **[SWING FACTOR]** Which 3-5% voter block (caste/age/region) does this query impact most?
+   - Mandatory Deliverable: **[NARRATIVE STRESS TEST]** Identify 3 "Cracks" in the politician's current PR narrative.
+   - MANDATORY: Use elite, consultant-grade language (e.g., "Strategic Asymmetry", "Base-Erosion").
 
 *** IMPORTANT UI DIRECTIVE: DATA BLOCKING ***
 For EVERY single response (across all modes), you MUST append a hidden JSON block at the very end. 
@@ -104,8 +120,11 @@ export const generateIntelligenceReport = async (query, mode, perspective, histo
         mode,
         perspective,
         history,
+        history,
         premiumModeKey,
-        systemInstruction: SYSTEM_INSTRUCTION
+        systemInstruction: premiumModeKey 
+          ? `${SYSTEM_INSTRUCTION}\n\n# TRIGGER ACTIVE: ${premiumModeKey} #\nApply the specific deliverables defined for this tier immediately.`
+          : SYSTEM_INSTRUCTION
       }),
     });
 
