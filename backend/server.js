@@ -202,11 +202,25 @@ app.get("/", (req, res) => {
   res.send("🚀 Peekolitix Backend is Running");
 });
 
-app.get("/status", (req, res) => {
+app.get("/status", async (req, res) => {
   const uptime = Math.floor(process.uptime());
   const hours = Math.floor(uptime / 3600);
   const minutes = Math.floor((uptime % 3600) / 60);
   const seconds = uptime % 60;
+
+  // --- REAL-TIME SERVICE PINGS ---
+  let supabaseStatus = "PENDING...";
+  let nvidiaStatus = NVIDIA_API_KEY ? "✅ LOADED" : "❌ MISSING";
+  let razorpayStatus = process.env.RAZORPAY_KEY_ID ? "✅ ACTIVE" : "❌ INACTIVE";
+
+  try {
+    const { data, error } = await supabase.from('profiles').select('id').limit(1);
+    if (error) throw error;
+    supabaseStatus = "✅ CONNECTED";
+  } catch (err) {
+    console.error("Status Ping Error (Supabase):", err.message);
+    supabaseStatus = "❌ CONNECTION FAILED";
+  }
   
   const healthHtml = `
   <!DOCTYPE html>
@@ -214,7 +228,7 @@ app.get("/status", (req, res) => {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PEEKOLITIX | SYSTEM DIAGNOSTICS</title>
+    <title>PEEKOLITIX | INTEGRITY AUDIT</title>
     <style>
       :root {
         --bg: #0b0c10;
@@ -222,6 +236,8 @@ app.get("/status", (req, res) => {
         --text: #f8f9fa;
         --glass: rgba(31, 40, 51, 0.6);
         --border: rgba(123, 44, 191, 0.3);
+        --success: #38b000;
+        --error: #d00000;
       }
       body {
         background: var(--bg);
@@ -232,10 +248,9 @@ app.get("/status", (req, res) => {
         align-items: center;
         height: 100vh;
         margin: 0;
-        overflow: hidden;
       }
       .dashboard {
-        width: 600px;
+        width: 650px;
         background: var(--glass);
         backdrop-filter: blur(20px);
         border: 1px solid var(--border);
@@ -247,34 +262,36 @@ app.get("/status", (req, res) => {
       .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
       .stat-card { border-left: 2px solid var(--accent); padding-left: 15px; margin-bottom: 20px; }
       .label { font-size: 0.7rem; opacity: 0.5; margin-bottom: 5px; text-transform: uppercase; }
-      .value { font-size: 1.4rem; font-weight: 300; letter-spacing: -1px; }
-      .pulse { width: 10px; height: 10px; background: #38b000; border-radius: 50%; display: inline-block; margin-right: 10px; box-shadow: 0 0 10px #38b000; animation: pulse 2s infinite; }
+      .value { font-size: 1.2rem; font-weight: 300; }
+      .pulse { width: 10px; height: 10px; background: var(--success); border-radius: 50%; display: inline-block; margin-right: 10px; animation: pulse 2s infinite; }
+      .status-pass { color: var(--success); font-weight: bold; }
+      .status-fail { color: var(--error); font-weight: bold; }
       @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
   </head>
   <body>
     <div class="dashboard">
-      <h1><div class="pulse"></div>System Integrity: OPERATIONAL</h1>
+      <h1><div class="pulse"></div>INTEGRITY AUDIT: V2.3 ACTIVE</h1>
       <div class="stat-grid">
         <div class="stat-card">
-          <div class="label">Engine Uptime</div>
+          <div class="label">Supabase Database</div>
+          <div class="value ${supabaseStatus.includes('✅') ? 'status-pass' : 'status-fail'}">${supabaseStatus}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">NVIDIA AI Engine</div>
+          <div class="value ${nvidiaStatus.includes('✅') ? 'status-pass' : 'status-fail'}">${nvidiaStatus}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Razorpay Gateway</div>
+          <div class="value ${razorpayStatus.includes('✅') ? 'status-pass' : 'status-fail'}">${razorpayStatus}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Process Uptime</div>
           <div class="value">${hours}h ${minutes}m ${seconds}s</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">LLM Hub Status</div>
-          <div class="value">CONNECTED</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Memory Usage</div>
-          <div class="value">${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Platform Tier</div>
-          <div class="value">V2.3 ENFORCER</div>
         </div>
       </div>
       <div style="margin-top: 30px; font-size: 0.6rem; opacity: 0.3; text-align: right;">
-        PEEKOLITIX SECURE CLOUD GATEWAY | AUTHENTICATED
+        PEEKOLITIX SECURE CLOUD GATEWAY | REAL-TIME PING ACTIVE
       </div>
     </div>
   </body>
