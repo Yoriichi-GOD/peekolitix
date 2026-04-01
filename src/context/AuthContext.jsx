@@ -4,10 +4,14 @@ import { supabase } from '../supabaseClient';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Dev mode: skip auth when Supabase is not configured
+  const devMode = !supabase;
+  const [user, setUser] = useState(devMode ? { id: 'dev-user', email: 'dev@peekolitix.local' } : null);
+  const [loading, setLoading] = useState(!devMode);
 
   useEffect(() => {
+    if (!supabase) return;
+
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -24,6 +28,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signOut = async () => {
+    if (!supabase) return;
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Sign-out error:', error.message);
   };

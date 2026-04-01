@@ -1,0 +1,99 @@
+.dev-panel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.dev-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: #00ff88;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.dev-toggle:hover {
+  background: rgba(0, 255, 136, 0.2);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+}
+
+.dev-content {
+  background: rgba(10, 12, 16, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 8px;
+  min-width: 240px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dev-header {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: rgba(0, 255, 136, 0.5);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.dev-tier-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dev-tier-btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.dev-tier-btn:hover {
+  filter: brightness(1.3);
+  transform: translateX(2px);
+}
+
+.dev-tier-btn.dev-tier-active {
+  border-width: 2px;
+  box-shadow: 0 0 10px var(--btn-bg);
+  font-weight: 800;
+}
+
+.dev-tier-btn.dev-tier-active::after {
+  content: ' (active)';
+  opacity: 0.6;
+  font-weight: 400;
+  font-size: 0.65rem;
+}
+
+.dev-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dev-info strong {
+  font-weight: 700;
+}

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './RightPanel.css';
-import { Target, TrendingUp, ShieldAlert, Award } from 'lucide-react';
+import { Target, TrendingUp, ShieldAlert, Award, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const RightPanel = ({ history = [] }) => {
@@ -24,8 +24,24 @@ const RightPanel = ({ history = [] }) => {
     return "WAR ROOM KING";
   };
 
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  if (isCollapsed) {
+    return (
+      <aside className="right-panel-collapsed">
+        <button className="rp-toggle-btn" onClick={() => setIsCollapsed(false)} title="Show Intel Panel">
+          <PanelRightOpen size={16} />
+          <span className="rp-toggle-text">INTEL</span>
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside className="right-panel glass-panel">
+      <button className="rp-collapse-btn" onClick={() => setIsCollapsed(true)} title="Hide Intel Panel">
+        <PanelRightClose size={14} />
+      </button>
       <div className="panel-section">
         <h3 className="panel-title">
           <Award size={16} className="text-accent" />

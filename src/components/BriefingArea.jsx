@@ -2,10 +2,27 @@ import React, { useState } from 'react';
 import './BriefingArea.css';
 import PerspectiveFilter from './PerspectiveFilter';
 import PremiumGate from './PremiumGate';
-import { Terminal, Send, Search, Loader2 } from 'lucide-react';
+import {
+  Terminal, Send, Search, Loader2, Wrench,
+  Swords, PieChart, BookOpen, Globe, Zap, ShieldAlert, Scale
+} from 'lucide-react';
 
-const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuerySubmit, isLoading, intelligenceData, premiumGates = [] }) => {
+const TOOLS = [
+  { id: 'DEBATE', label: 'Debate', icon: Swords, desc: 'Pro/Con Analysis' },
+  { id: 'STATS', label: 'Stats', icon: PieChart, desc: 'Data & Trends' },
+  { id: 'EXPLAIN', label: 'Explain', icon: BookOpen, desc: 'Policy Breakdown' },
+  { id: 'GEO', label: 'Geo', icon: Globe, desc: 'Regional Impact' },
+  { id: 'QUICK', label: 'Quick', icon: Zap, desc: 'Rapid Response' },
+  { id: 'VERIFY', label: 'Verify', icon: ShieldAlert, desc: 'Fact Check' },
+  { id: 'COMPARE', label: 'Compare', icon: Scale, desc: 'Side-by-Side' },
+];
+
+const BriefingArea = ({ currentMode, setMode, currentPerspective, setPerspective, onQuerySubmit, isLoading, intelligenceData, premiumGates = [] }) => {
   const [query, setQuery] = useState('');
+  const [toolsExpanded, setToolsExpanded] = useState(false);
+
+  const isToolMode = TOOLS.some(t => t.id === currentMode);
+  const isChatMode = currentMode === 'CHAT';
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -15,29 +32,34 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
     }
   };
 
+  const handleToolClick = (toolId) => {
+    if (currentMode === toolId) {
+      // Deselect tool = back to chat
+      setMode('CHAT');
+    } else {
+      setMode(toolId);
+    }
+  };
+
   const getModeTitle = () => {
+    if (isChatMode) return 'FREE INTELLIGENCE CHAT';
+    const tool = TOOLS.find(t => t.id === currentMode);
+    if (tool) return tool.desc.toUpperCase();
     switch (currentMode) {
-      case 'DEBATE': return 'PRO/CON DEBATE ANALYSIS';
-      case 'STATS': return 'NUMERICAL DATA & TRENDS';
-      case 'EXPLAIN': return 'POLICY & BUDGET EXPLANATION';
-      case 'GEO': return 'GLOBAL GEOPOLITICAL IMPACT';
-      case 'QUICK': return 'RAPID RESPONSE BRIEFING';
       case 'STUDENT_PREMIUM': return '🎓 STUDENT DEBATE PACK';
       case 'JOURNALIST_PREMIUM': return '📰 JOURNALIST SOURCE ENGINE';
       case 'CONSULTANT_PREMIUM': return '🏛️ WAR ROOM INTELLIGENCE';
-      case 'BATTLE': return '⚔️ BATTLE MODE: OPPONENT DESTROYER';
-      case 'SIMULATE': return '🎭 DEBATE ARENA: AI SIMULATION';
+      case 'BATTLE': return '⚔️ BATTLE MODE';
+      case 'SIMULATE': return '🎭 DEBATE ARENA';
       default: return 'INTELLIGENCE BRIEFING';
     }
   };
 
   const getCompactModeTitle = () => {
+    if (isChatMode) return 'CHAT';
+    const tool = TOOLS.find(t => t.id === currentMode);
+    if (tool) return tool.label.toUpperCase();
     switch (currentMode) {
-      case 'DEBATE': return 'ANALYSIS';
-      case 'STATS': return 'DATA';
-      case 'EXPLAIN': return 'POLICY';
-      case 'GEO': return 'IMPACT';
-      case 'QUICK': return 'RAPID';
       case 'STUDENT_PREMIUM': return 'STUDENT';
       case 'JOURNALIST_PREMIUM': return 'SOURCE';
       case 'CONSULTANT_PREMIUM': return 'WAR ROOM';
@@ -48,9 +70,13 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
   };
 
   const getPlaceholder = () => {
+    if (isChatMode) return 'Ask anything about Indian politics, policy, or governance...';
     if (currentMode === 'BATTLE') return "Paste the opponent's claim/argument here to destroy it...";
     if (currentMode === 'SIMULATE') return "Describe the debate scenario (e.g., BJP vs Congress on Jobs)...";
-    return `Enter subject for ${getCompactModeTitle()}...`;
+    if (currentMode === 'VERIFY') return "Paste a claim or WhatsApp forward to fact-check...";
+    if (currentMode === 'COMPARE') return "Enter two entities to compare (e.g., Modi vs Rahul on economy)...";
+    const tool = TOOLS.find(t => t.id === currentMode);
+    return tool ? `Enter subject for ${tool.desc}...` : 'Enter your query...';
   };
 
   return (
@@ -62,9 +88,9 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
           <span className="mode-text-full">{getModeTitle()}</span>
           <span className="mode-text-compact">{getCompactModeTitle()}</span>
         </div>
-        <PerspectiveFilter 
-          currentPerspective={currentPerspective} 
-          setPerspective={setPerspective} 
+        <PerspectiveFilter
+          currentPerspective={currentPerspective}
+          setPerspective={setPerspective}
         />
       </div>
 
@@ -78,8 +104,6 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
         ) : intelligenceData ? (
           <div className="intelligence-report">
             {intelligenceData}
-
-            {/* Premium gate sections below free results */}
             {premiumGates.map(gateKey => (
               <PremiumGate key={gateKey} modeKey={gateKey} />
             ))}
@@ -88,18 +112,57 @@ const BriefingArea = ({ currentMode, currentPerspective, setPerspective, onQuery
           <div className="empty-state">
             <Search size={48} className="empty-icon" />
             <h2>AWAITING QUERY INPUT</h2>
-            <p>Select a mode and perspective, then enter your query below to generate a factual, data-driven report based on verified sources (PIB, Lok Sabha, RBI, NITI Aayog).</p>
+            <p>{isChatMode
+              ? 'Ask any question about Indian politics, policy, or governance. Or select a tool below for structured analysis.'
+              : 'Select a mode and perspective, then enter your query below to generate a factual, data-driven report.'
+            }</p>
           </div>
         )}
       </div>
 
       <div className="query-section">
+        {/* Tool chips */}
+        <div className="tools-bar">
+          <button
+            className="tools-toggle"
+            onClick={() => setToolsExpanded(!toolsExpanded)}
+            title="Analysis Tools"
+          >
+            <Wrench size={14} />
+            <span className="tools-toggle-label">Tools</span>
+          </button>
+
+          <div className={`tools-chips ${toolsExpanded ? 'tools-expanded' : ''}`}>
+            {TOOLS.map(tool => {
+              const Icon = tool.icon;
+              const isActive = currentMode === tool.id;
+              return (
+                <button
+                  key={tool.id}
+                  className={`tool-chip ${isActive ? 'tool-chip-active' : ''}`}
+                  onClick={() => handleToolClick(tool.id)}
+                  title={tool.desc}
+                >
+                  <Icon size={13} />
+                  <span>{tool.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {isToolMode && (
+            <button className="tool-clear" onClick={() => setMode('CHAT')} title="Back to chat">
+              ✕
+            </button>
+          )}
+        </div>
+
         <form className="query-form" onSubmit={handleSubmit}>
           <div className="input-wrapper">
             <span className="prompt-symbol">&gt;</span>
-            <input 
-              type="text" 
-              className="query-input" 
+            <input
+              type="text"
+              className="query-input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={getPlaceholder()}

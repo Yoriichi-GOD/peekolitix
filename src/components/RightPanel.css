@@ -7,6 +7,65 @@
   gap: 24px;
   border-left: 1px solid var(--border-color);
   background: var(--bg-panel);
+  position: relative;
+  overflow-y: auto;
+}
+
+.rp-collapse-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.rp-collapse-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+}
+
+.right-panel-collapsed {
+  width: 40px;
+  height: 100%;
+  border-left: 1px solid var(--border-color);
+  background: var(--bg-panel);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16px;
+}
+
+.rp-toggle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.rp-toggle-btn:hover {
+  color: var(--brand-purple-hover);
+  background: rgba(157, 78, 221, 0.1);
+}
+
+.rp-toggle-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  font-weight: 700;
 }
 
 .panel-section {
@@ -157,10 +216,8 @@
 .flex-1 { flex: 1; }
 
 @media (max-width: 768px) {
-  .right-panel {
-    width: 100% !important;
-    height: auto !important;
-    border-left: none !important;
-    border-top: 1px solid var(--border-color);
+  .right-panel,
+  .right-panel-collapsed {
+    display: none;
   }
 }
