@@ -138,8 +138,60 @@
   box-shadow: 0 0 10px rgba(199, 125, 255, 0.3);
 }
 
+.mobile-burger-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #c77dff;
+  cursor: pointer;
+  padding: 4px;
+}
+
 @media (max-width: 768px) {
   .app-header {
+    height: 50px;
+    padding: 0 16px;
+    background: rgba(11, 12, 16, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .header-left, .header-right {
+    gap: 8px;
+  }
+
+  .mobile-burger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo h1 {
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+  }
+
+  .logo svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-hidden {
     display: none !important;
   }
+
+  .status-pulse-mobile {
+    width: 6px;
+    height: 6px;
+    background: var(--status-pro);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--status-pro);
+    animation: simple-pulse 2s infinite;
+  }
+}
+
+@keyframes simple-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
 }

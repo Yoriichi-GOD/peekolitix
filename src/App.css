@@ -31,15 +31,16 @@
   .main-content {
     flex-direction: column;
     flex: 1;
-    overflow: hidden;
+    overflow-y: auto; /* Allow the whole area to scroll as one segment */
     position: relative;
+    height: 100%;
   }
 
   .content-grid {
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 120px; /* Search bar padding space */
+    overflow: visible; /* Let children manage internal flow if needed, or grow */
+    height: auto;
+    width: 100%;
   }
 }
 

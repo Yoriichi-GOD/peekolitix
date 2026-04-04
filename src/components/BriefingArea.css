@@ -315,14 +315,20 @@
   }
 
   .briefing-area {
-    height: auto;
-    overflow: visible;
+    height: 100%;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .briefing-content {
+    flex: 1;
     padding: 16px;
-    padding-bottom: 40px;
-    overflow-y: visible;
+    padding-bottom: 200px; /* Safe zone for fixed search bar + tools */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
   }
 
   .query-section {

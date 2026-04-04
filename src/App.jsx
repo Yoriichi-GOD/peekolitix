@@ -197,15 +197,6 @@ function Dashboard() {
 
   return (
     <div className="app-container">
-      {/* Mobile Top Bar */}
-      <div className="mobile-header">
-        <button className="burger-btn" onClick={() => setIsMobileMenuOpen(true)}>
-          <Menu size={24} />
-        </button>
-        <div className="mobile-logo">PEEKOLITIX</div>
-        <div style={{ width: 40 }} /> {/* Spacer */}
-      </div>
-
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
@@ -226,7 +217,7 @@ function Dashboard() {
       />
       
       <div className="main-content">
-        <Header user={user} />
+        <Header user={user} onToggleMobileMenu={() => setIsMobileMenuOpen(true)} />
         
         <div className="content-grid">
           <BriefingArea

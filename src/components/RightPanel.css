@@ -216,8 +216,23 @@
 .flex-1 { flex: 1; }
 
 @media (max-width: 768px) {
-  .right-panel,
+  .right-panel {
+    display: flex;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    height: auto;
+    padding: 30px 20px;
+    padding-bottom: 160px; /* Space for the search bar */
+    flex-shrink: 0;
+  }
+  
   .right-panel-collapsed {
     display: none;
+  }
+
+  .rank-card {
+    background: rgba(199, 125, 255, 0.08);
+    border: 1px solid rgba(199, 125, 255, 0.3);
   }
 }
