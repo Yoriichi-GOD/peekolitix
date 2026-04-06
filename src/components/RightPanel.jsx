@@ -4,14 +4,14 @@ import { Target, TrendingUp, ShieldAlert, Award, PanelRightClose, PanelRightOpen
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const RightPanel = ({ history = [] }) => {
-  // Extract data for chart
-  const chartData = history.map((h, i) => ({
+  // Extract data for chart (reversed to show oldest to newest)
+  const chartData = [...history].reverse().map((h, i) => ({
     name: `T${i + 1}`,
     score: Number(h.dominanceScore || 5),
     query: h.query.substring(0, 15) + '...'
   }));
 
-  const lastEntry = history.length > 0 ? history[history.length - 1] : null;
+  const lastEntry = history.length > 0 ? history[0] : null;
   const avgScore = history.length > 0 
     ? (history.reduce((acc, curr) => acc + Number(curr.dominanceScore || 5), 0) / history.length).toFixed(1)
     : 0;

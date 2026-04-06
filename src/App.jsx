@@ -82,28 +82,31 @@ function Dashboard() {
       
       let dominanceData = { dominanceScore: 5, biasLevel: 'Low', winProbability: '50%' };
       try {
-        // Try fenced JSON first, then raw JSON object
-        const fencedMatch = markdownRes.match(/```json\n?([\s\S]*?)\n?```/);
-        const rawMatch = markdownRes.match(/\{\s*"dominanceScore"\s*:\s*\d[\s\S]*?"winProbability"\s*:\s*"[^"]*"\s*\}/);
-        const jsonStr = fencedMatch ? fencedMatch[1] : rawMatch ? rawMatch[0] : null;
-        if (jsonStr) {
+        // High-fidelity regex to find the JSON block even with formatting variances
+        const jsonBlockMatch = markdownRes.match(/\{[\s\S]*?"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/);
+        
+        if (jsonBlockMatch) {
+          const jsonStr = jsonBlockMatch[0];
           const parsed = JSON.parse(jsonStr);
-          if (parsed.dominanceScore) {
-            dominanceData.dominanceScore = Math.min(Number(parsed.dominanceScore), 10);
+          if (parsed.dominanceScore !== undefined) {
+            dominanceData.dominanceScore = Math.min(Math.max(Number(parsed.dominanceScore), 1), 10);
             dominanceData.biasLevel = parsed.biasLevel || 'Low';
             dominanceData.winProbability = parsed.winProbability || '50%';
           }
         }
-      } catch (e) { console.error("Score parsing error", e); }
+      } catch (e) { 
+        console.warn("Soft-failure on dominance parsing; using defaults.", e); 
+      }
 
+      // Ruthless cleaning: Remove the internal data block from the user-facing report
       const cleanMarkdown = markdownRes
-        .replace(/```json\n?([\s\S]*?)\n?```/g, '')
-        .replace(/\{\s*"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/g, '')
+        .replace(/```json[\s\S]*?```/gi, '')
+        .replace(/\{[\s\S]*?"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/gi, '')
         .replace(/JSON[\s_]*BLOCK:?/gi, '')
-        .replace(/### MANDATORY JSON FOOTER ###[\s\S]*$/gi, '')
-        .replace(/\n\s*Note:\s*The (above|dominance|JSON|internal|hidden)[\s\S]*?$/gi, '')
-        .replace(/PREMIUM LAYER:?/gi, '')
-        .replace(/CONSULTANT_PREMIUM:?/gi, '')
+        .replace(/### MANDATORY JSON FOOTER ###/gi, '')
+        .replace(/### INTERNAL METRICS ###/gi, '')
+        .replace(/\[DOMINANCE DATA SCANNED\]/gi, '')
+        .split('### Sharpen Your Query')[0] // Ensure we keep the sharpening nudge if present, or stop before JSON
         .trim();
 
       const newEntry = { 
