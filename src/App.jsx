@@ -182,10 +182,14 @@ function Dashboard() {
         .replace(/```json[\s\S]*?```/gi, '')
         .replace(/\{[\s\S]*?"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/gi, '')
         .replace(/JSON[\s_]*BLOCK:?/gi, '')
-        .replace(/### MANDATORY JSON FOOTER ###/gi, '')
+        .replace(/JSON[\s_]*Footer:?/gi, '')
+        .replace(/### MANDATORY JSON FOOTER ###[\s\S]*$/gi, '')
         .replace(/### INTERNAL METRICS ###/gi, '')
         .replace(/\[DOMINANCE DATA SCANNED\]/gi, '')
-        .split('### Sharpen Your Query')[0] // Ensure we keep the sharpening nudge if present, or stop before JSON
+        .replace(/SILENT INSTRUCTION[\s\S]*$/gi, '')
+        .replace(/\n\s*Note:\s*The (above|dominance|JSON|internal|hidden)[\s\S]*?$/gi, '')
+        .replace(/PREMIUM LAYER:?/gi, '')
+        .replace(/CONSULTANT_PREMIUM:?/gi, '')
         .trim();
 
       const newEntry = { 

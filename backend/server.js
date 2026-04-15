@@ -17,15 +17,9 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // CORS FIREWALL — only allow known frontend origins
 // ========================================================================
 const corsOptions = {
-  origin: [
-    'https://peekolitix.vercel.app',
-    'https://peekolitix.in',
-    'https://www.peekolitix.in',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174',
-  ],
+  origin: IS_PRODUCTION
+    ? ['https://peekolitix.vercel.app', 'https://peekolitix.in', 'https://www.peekolitix.in']
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
   optionsSuccessStatus: 200
 };
 
@@ -41,13 +35,19 @@ const aiLimiter = rateLimit({
   max: 10,
   message: { error: 'Rate limit exceeded. Try again in 60 seconds.' }
 });
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Too many requests. Try again shortly.' }
+});
 
 // ========================================================================
 // SECURITY MIDDLEWARE: SUPABASE JWT AUTHENTICATION 
 // ========================================================================
 const authenticate = async (req, res, next) => {
   if (!supabase) {
-    req.user = { id: req.body.user_id || 'dev-user' };
+    if (IS_PRODUCTION) return res.status(503).json({ error: 'Authentication service unavailable.' });
+    req.user = { id: 'dev-user' }; // Fixed ID — never trust client input
     return next();
   }
 
@@ -128,10 +128,9 @@ const PLAN_PRICES = { STUDENT: 49, JOURNALIST: 199, CONSULTANT: 499 };
 // ========================================================================
 const DOMINANCE_SCORE_DIRECTIVE = `
 
-### MANDATORY JSON FOOTER ###
-At the very end of your response, you MUST output the following JSON block on its own line (no markdown fences):
+SILENT INSTRUCTION (do NOT print any header or label for this): On the very last line of your response, output ONLY this JSON object with no other text around it:
 { "dominanceScore": X, "biasLevel": "Low/Med/High", "winProbability": "X%" }
-Where X is an integer 1-10 rating of analytical dominance, biasLevel reflects detected slant, and winProbability is a debate-win estimate.`;
+Replace X with your actual scores. Do NOT write "JSON Footer" or any label. Just the raw JSON object on the final line.`;
 
 // ========================================================================
 // FULL MODE INSTRUCTION MAP — each mode gets its own structured prompt
@@ -274,31 +273,54 @@ Numbered list of verifiable sources.${DOMINANCE_SCORE_DIRECTIVE}`,
 
   COMPARE: `You are Peekolitix in COMPARE mode. Produce the following sections with EXACT headers:
 
+### COMPARISON FAIRNESS RULES (MANDATORY) ###
+You MUST follow these rules to avoid misleading comparisons:
+1. USE MATCHED TIMEFRAMES — compare equal-length periods. Never compare a party's best 3 years against another's worst 5 years.
+2. ACCOUNT FOR EXTERNAL SHOCKS — if one period includes COVID-19, a global financial crisis, or a commodity shock, explicitly state how this distorts the numbers. Adjust or caveat accordingly.
+3. USE CONSISTENT METHODOLOGY — if a metric changed measurement methods (e.g., GDP base year revision, PLFS replacing NSSO, unified CPI introduced in 2014), state this clearly. Never present numbers from different methodologies as directly comparable.
+4. AVOID BASE EFFECT FALLACY — high growth after a crash (e.g., 2021 after 2020) is recovery, not performance. Flag it.
+5. CITE THE SAME SOURCE for both sides of a comparison when possible. If different sources are used, explain why.
+6. NEVER present a single-year snapshot as representative of an entire tenure. Use averages over the full period.
+7. STATE THE VERDICT TABLE — for each metric in the comparison table, add a "Methodology Note" column that flags if the comparison is: "Direct" (same methodology), "Adjusted" (adjusted for shocks), "Incomparable" (different methodologies).
+
 ## Versus Overview
 One paragraph framing the comparison and why it matters.
 
 ## Head-to-Head Comparison
-A markdown table with 5-6 metrics as rows and the two entities as columns.
+A markdown table with columns: Metric | [Entity A] | [Entity B] | Methodology Note | Edge
+The "Methodology Note" column MUST state whether the comparison is Direct, Adjusted, or Incomparable for each row.
+
+## Summary Verdict Table
+A second table: Metric | Status (Accurate/Misleading/Incomparable) | Why
+This table evaluates whether each metric is a FAIR comparison.
+
+CRITICAL: You MUST actually use "Misleading" or "Incomparable" where appropriate — do NOT mark everything as "Accurate" to avoid conflict. Specifically:
+- GDP comparisons between 2014-2023 (BJP) and 2004-2014 (Congress) MUST be flagged because BJP tenure includes COVID-19 (FY21 GDP: -7.3%) which massively distorts averages
+- Unemployment comparisons using PLFS (post-2017) vs NSSO (pre-2017) are INCOMPARABLE — different surveys
+- CPI inflation pre-2014 used a different methodology than post-2014 unified CPI
+- Debt-to-GDP spiked during COVID for ALL countries globally — flagging BJP tenure without this context is misleading
+- Foreign exchange reserves grow naturally over time — comparing absolute numbers across decades is meaningless without normalizing
 
 ## Strengths & Weaknesses
 ### [Entity A]
-- Strengths: ...
-- Weaknesses: ...
+- Strengths: 2-3 data-backed points
+- Weaknesses: 2-3 data-backed points
 ### [Entity B]
-- Strengths: ...
-- Weaknesses: ...
+- Strengths: 2-3 data-backed points
+- Weaknesses: 2-3 data-backed points
 
 ## Context Most People Miss
-One overlooked factor that changes the comparison.
+One overlooked factor that changes the comparison. Address global conditions, inherited problems, demographic shifts, or methodology changes.
 
 ## Verdict
-Declare a winner with reasoning, or explain why comparison is a false equivalence.
+Declare a winner ON DATA with clear reasoning. If the comparison is fundamentally unfair (different methodologies, incomparable timeframes), say so explicitly instead of forcing a verdict. NEVER say "both sides have merit" unless you prove why with equal evidence.
 
 ## Debate Ammunition
-2 killer lines each side could use.
+- **If you support [Entity A], say:** [1-2 sentence argument with specific stats]
+- **If you support [Entity B], say:** [1-2 sentence argument with specific stats]
 
 ## Sources
-Numbered list of verifiable sources.${DOMINANCE_SCORE_DIRECTIVE}`,
+Numbered list of verifiable sources with year and institution name.${DOMINANCE_SCORE_DIRECTIVE}`,
 
   BATTLE: `You are Peekolitix in BATTLE mode. You are an aggressive debate weapon. Produce the following sections with EXACT headers:
 
@@ -369,21 +391,38 @@ const GET_TIER_INSTRUCTION = (tier) => {
 // ========================================================================
 app.post('/api/ai/analyze-v2', aiLimiter, authenticate, checkQueryLimit, async (req, res) => {
   try {
-    const { query, mode, perspective = 'NEUTRAL', history = [], systemInstruction, premiumModeKey } = req.body;
+    const { query, mode, perspective = 'NEUTRAL', history = [], premiumModeKey } = req.body;
+    // systemInstruction from client is intentionally ignored — all prompts are built server-side
 
-    // FIX 5: Validate mode parameter against whitelist
-    if (!ALLOWED_MODES.includes(mode)) {
-      return res.status(400).json({ error: 'Invalid mode' });
-    }
+    // Input validation
+    if (!query || typeof query !== 'string') return res.status(400).json({ error: 'Query is required' });
+    if (query.length > 3000) return res.status(400).json({ error: 'Query too long. Maximum 3000 characters.' });
+    if (!ALLOWED_MODES.includes(mode)) return res.status(400).json({ error: 'Invalid mode' });
 
-    // FIX 6: Server-side premium tier enforcement
-    // TODO: Add full JWT verification when Supabase auth is configured.
-    //       For now we validate that premiumModeKey is an expected value and log a warning.
-    //       Without JWT, a sophisticated client could spoof the key — this is a stopgap.
-    if (premiumModeKey && !ALLOWED_PREMIUM_KEYS.includes(premiumModeKey)) {
-      console.warn(`WARNING: Unknown premiumModeKey received: "${premiumModeKey}" — ignoring premium deliverables.`);
+    // Server-side premium tier enforcement — verify user's ACTUAL tier from Supabase
+    let validatedPremiumKey = null;
+    if (premiumModeKey && ALLOWED_PREMIUM_KEYS.includes(premiumModeKey)) {
+      if (supabase && req.user?.id && req.user.id !== 'dev-user') {
+        const { data: profile } = await supabase.from('profiles').select('tier').eq('id', req.user.id).single();
+        const userTier = profile?.tier || 'FREE';
+        const TIER_PREMIUM_MAP = {
+          FREE: [],
+          STUDENT: ['STUDENT_PREMIUM'],
+          JOURNALIST: ['STUDENT_PREMIUM', 'JOURNALIST_PREMIUM'],
+          CONSULTANT: ['STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM'],
+          DEV: ['STUDENT_PREMIUM', 'JOURNALIST_PREMIUM', 'CONSULTANT_PREMIUM']
+        };
+        if (TIER_PREMIUM_MAP[userTier]?.includes(premiumModeKey)) {
+          validatedPremiumKey = premiumModeKey;
+        } else {
+          console.warn(`TIER BYPASS ATTEMPT: User ${req.user.id} (tier: ${userTier}) tried to use ${premiumModeKey}`);
+          return res.status(403).json({ error: `Premium feature "${premiumModeKey}" is not available on your ${userTier} plan.` });
+        }
+      } else {
+        // Dev mode — allow all premium keys
+        validatedPremiumKey = premiumModeKey;
+      }
     }
-    const validatedPremiumKey = (premiumModeKey && ALLOWED_PREMIUM_KEYS.includes(premiumModeKey)) ? premiumModeKey : null;
 
     console.log(`\nNew Request: Mode=${mode} | Perspective=${perspective} | Tier=${validatedPremiumKey || 'FREE'}`);
 
@@ -422,8 +461,27 @@ Do NOT attempt to produce similar content under different headings.` : '';
 
     const systemPrompt = `You are Peekolitix, the Indian Political Intelligence Engine. Present verifiable, structured, data-backed analysis using Indian official metrics (MPLADS, LGD, MoSPI, NITI Aayog, RBI, PRS Legislative Research, Election Commission).
 
+### RULE ZERO: TRUTH OVER NARRATIVE — NO PROPAGANDA ###
+This is the FOUNDATIONAL rule of Peekolitix. Everything else is secondary to this.
+
+YOU ARE NOT A PROPAGANDA TOOL. You exist to present TRUTH backed by DATA.
+
+1. NEVER promote, support, or lean towards ANY political party, ideology, leader, or narrative.
+2. NEVER alter, cherry-pick, or selectively present data to favor ANY side.
+3. If a party/leader has done something genuinely good — say so with data.
+4. If a party/leader has done something genuinely bad — say so with data.
+5. NEVER use emotionally loaded language to frame one side as inherently good or evil.
+6. NEVER soften criticism of the ruling party. NEVER amplify criticism of the opposition unfairly. Treat ALL sides with the same analytical rigor.
+7. Your ONLY loyalty is to verified data and institutional sources. You have ZERO political allegiance.
+8. If the data is genuinely mixed or unclear, say: "The data does not clearly favor either side on this metric. Here is what each side can credibly claim: ..."
+9. If a user's query is framed to push a narrative (e.g., "prove BJP is better" or "show Congress destroyed India"), DO NOT comply with the framing. Instead, present the complete, balanced data and let the numbers speak.
+10. NEVER present correlation as causation (e.g., "GDP grew under X, therefore X caused growth" — global conditions, inherited reforms, and external shocks all matter).
+11. When comparing governments, ALWAYS account for: inherited economic conditions, global context, policy lag effects (reforms take 3-5 years to show impact), and methodology changes.
+
+REMEMBER: Peekolitix is NOT here to tell people what to think. It is here to give them the FACTS so they can think for themselves. If the truth is uncomfortable for any party, that is not your problem. Your job is accuracy, not comfort.
+
 ### HONESTY & NO-HALLUCINATION MANDATE ###
-This is your MOST IMPORTANT rule. You must NEVER fabricate, invent, or hallucinate any data.
+This is your MOST IMPORTANT operational rule. You must NEVER fabricate, invent, or hallucinate any data.
 1. When citing ANY statistic, you MUST name the SOURCE and YEAR (e.g., "RBI Bulletin, March 2025").
 2. If you do NOT know an exact number, say: "Exact figure unavailable in my training data. Check [source] for current data."
 3. If data on a topic is LIMITED or SCARCE, say so honestly: "Limited data is available on this topic. Here is what is known: ..."
@@ -580,7 +638,7 @@ STRICT RULES:
 // ========================================================================
 // SECURE PERSISTENCE LAYER — all Supabase calls guarded
 // ========================================================================
-app.post('/api/save-briefing', authenticate, async (req, res) => {
+app.post('/api/save-briefing', generalLimiter, authenticate, async (req, res) => {
   try {
     const { query, mode, perspective, report, dominanceScore, biasLevel, winProbability } = req.body;
     const user_id = req.user.id;
@@ -602,7 +660,7 @@ app.post('/api/save-briefing', authenticate, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/history', authenticate, async (req, res) => {
+app.post('/api/history', generalLimiter, authenticate, async (req, res) => {
   try {
     const user_id = req.user.id;
 
@@ -635,7 +693,7 @@ const razorpay = (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET })
   : null;
 
-app.post('/api/create-order', authenticate, async (req, res) => {
+app.post('/api/create-order', generalLimiter, authenticate, async (req, res) => {
   try {
     // FIX 8: Guard against missing Razorpay config
     if (!razorpay) return res.status(503).json({ error: 'Payment system not configured' });
@@ -653,6 +711,7 @@ app.post('/api/create-order', authenticate, async (req, res) => {
       amount: amount * 100, // Amount is in currency subunits (paise)
       currency,
       receipt: receipt || `rcpt_${Date.now()}`,
+      notes: { plan: planUpper, user_id: req.user?.id || 'unknown' }
     };
 
     const order = await razorpay.orders.create(options);
@@ -664,12 +723,12 @@ app.post('/api/create-order', authenticate, async (req, res) => {
   }
 });
 
-app.post('/api/verify-payment', authenticate, async (req, res) => {
+app.post('/api/verify-payment', generalLimiter, authenticate, async (req, res) => {
   try {
     // FIX 8: Guard against missing Razorpay config
     if (!razorpay) return res.status(503).json({ error: 'Payment system not configured' });
 
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan_key } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     const user_id = req.user.id;
 
     // FIX 9: No insecure fallback — reject if secret is missing
@@ -688,9 +747,20 @@ app.post('/api/verify-payment', authenticate, async (req, res) => {
     if (expectedSignature === razorpay_signature) {
       // Security Check Passed! Valid Payment.
 
+      // FIX 12: Derive plan_key from the Razorpay order notes, NOT from client
+      let plan_key = null;
+      try {
+        const order = await razorpay.orders.fetch(razorpay_order_id);
+        plan_key = order?.notes?.plan;
+        if (!plan_key || !PLAN_PRICES[plan_key]) {
+          return res.status(400).json({ error: 'Invalid plan in order. Contact support.' });
+        }
+      } catch (fetchErr) {
+        return res.status(500).json({ error: 'Failed to verify order details.' });
+      }
+
       // Upgrade the Analyst's Global Clearance in Supabase
       if (user_id && plan_key) {
-        // FIX 7: Guard Supabase call
         if (!supabase) {
           console.warn('Payment verified but Supabase not configured — cannot persist tier upgrade.');
           return res.json({ success: true, message: 'Payment verified. Tier upgrade skipped (dev mode).' });

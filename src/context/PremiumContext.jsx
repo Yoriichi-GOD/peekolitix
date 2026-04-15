@@ -77,26 +77,23 @@ export const PremiumProvider = ({ children }) => {
   const [targetTier, setTargetTier] = useState(null);
   const { user } = useAuth() || {};
 
-  // Restore tier from localStorage or grant Developer Access
+  // Fetch tier from Supabase on login (secure — no localStorage)
   useEffect(() => {
-    // 1. GOD MODE: Check if logged-in user is an official developer
-    // Define emails here OR in your .env file
-    const devEmails = import.meta.env.VITE_DEV_EMAILS 
-      ? import.meta.env.VITE_DEV_EMAILS.split(',') 
-      : ["nrgenosop@gmail.com", "abhaysinghnagarkoti11@gmail.com"];
-
-    if (user?.email && devEmails.includes(user.email)) {
-      setTier(TIERS.CONSULTANT);
-      return;
-    }
-
-    // 2. STANDARD USER: Check local storage for purchased tier
-    const savedTier = localStorage.getItem('peekolitix_dev_tier');
-    if (savedTier && Object.keys(TIERS).includes(savedTier)) {
-      setTier(savedTier);
-    } else {
-      setTier(TIERS.FREE);
-    }
+    if (!user?.id || !supabase) return;
+    const fetchTier = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('tier')
+        .eq('id', user.id)
+        .single();
+      if (data?.tier) {
+        const dbTier = data.tier;
+        setRealTier(dbTier);
+        setTier(dbTier);
+        setActiveTier(dbTier);
+      }
+    };
+    fetchTier();
   }, [user]);
 
   const isDev = realTier === TIERS.DEV;

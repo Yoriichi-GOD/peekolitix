@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 .env
+*.env
+backend/.env
+
+# Sensitive reference files (contain API keys)
+files/
 
 # Editor directories and files
 .vscode/*

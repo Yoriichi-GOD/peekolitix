@@ -8,4 +8,4 @@ dotenv.config({
     path: path.join(__dirname, '.env')
 });
 
-console.log("ENV LOADED:", process.env.SUPABASE_URL);
+if (process.env.NODE_ENV !== 'production') console.log("ENV LOADED:", process.env.SUPABASE_URL ? "Supabase configured" : "No Supabase");
