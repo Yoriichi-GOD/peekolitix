@@ -16,10 +16,26 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // ========================================================================
 // CORS FIREWALL — only allow known frontend origins
 // ========================================================================
+const allowedOrigins = [
+  'https://peekolitix.vercel.app', 
+  'https://peekolitix.in', 
+  'https://www.peekolitix.in',
+  'http://localhost:5173', 
+  'http://localhost:5174', 
+  'http://127.0.0.1:5173', 
+  'http://127.0.0.1:5174'
+];
+
 const corsOptions = {
-  origin: IS_PRODUCTION
-    ? ['https://peekolitix.vercel.app', 'https://peekolitix.in', 'https://www.peekolitix.in']
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || !IS_PRODUCTION) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   optionsSuccessStatus: 200
 };
 
@@ -645,19 +661,39 @@ app.post('/api/save-briefing', generalLimiter, authenticate, async (req, res) =>
 
     if (!user_id) return res.status(401).json({ error: "Unauthorized. User ID missing." });
 
-    if (!supabase) return res.json({ success: true, dev: true, message: 'Dev mode — Supabase not configured.' });
+    if (!supabase) {
+      console.log('SAVE BRIEFING (DEV): ', { query, mode });
+      return res.json({ success: true, dev: true, message: 'Dev mode — Supabase not configured.' });
+    }
+
+    // Defensive check: ensure response object is well-formed
+    const responseBody = { 
+      mode: mode || 'DEBATE', 
+      report: report || '', 
+      dominanceScore: dominanceScore ?? 5, 
+      biasLevel: biasLevel || 'Low', 
+      winProbability: winProbability || '50%' 
+    };
 
     const { error } = await supabase
       .from('debates')
       .insert([{
         user_id: user_id,
-        topic: query,
-        side: perspective,
-        response: { mode, report, dominanceScore, biasLevel, winProbability }
+        topic: query || 'Untitled Briefing',
+        side: perspective || 'NEUTRAL',
+        response: responseBody
       }]);
-    if (error) throw error;
+
+    if (error) {
+      console.error('Supabase Insert Error:', error.message);
+      throw error;
+    }
+    
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    console.error(`Save Briefing failed: ${err.message}`);
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 app.post('/api/history', generalLimiter, authenticate, async (req, res) => {
@@ -674,16 +710,32 @@ app.post('/api/history', generalLimiter, authenticate, async (req, res) => {
       .eq('user_id', user_id)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase History Fetch Error:', error.message);
+      throw error;
+    }
 
-    const history = data.map(item => ({
-      id: item.id, query: item.topic, perspective: item.side, mode: item.response.mode || 'DEBATE',
-      report: item.response.report, dominanceScore: item.response.dominanceScore || 5,
-      biasLevel: item.response.biasLevel || 'Low', winProbability: item.response.winProbability || '50%',
-      timestamp: item.created_at
-    }));
+    // FIX: Added null-checks to prevent crash if 'response' is null or malformed
+    const history = (data || []).map(item => {
+      const resp = item.response || {};
+      return {
+        id: item.id, 
+        query: item.topic || 'Untitled', 
+        perspective: item.side || 'NEUTRAL', 
+        mode: resp.mode || 'DEBATE',
+        report: resp.report || '', 
+        dominanceScore: resp.dominanceScore ?? 5,
+        biasLevel: resp.biasLevel || 'Low', 
+        winProbability: resp.winProbability || '50%',
+        timestamp: item.created_at
+      };
+    });
+    
     res.json({ success: true, history });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    console.error(`History Fetch failed: ${err.message}`);
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 // ========================================================================
