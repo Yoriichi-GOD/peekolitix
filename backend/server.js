@@ -16,10 +16,26 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // ========================================================================
 // CORS FIREWALL — only allow known frontend origins
 // ========================================================================
+const allowedOrigins = [
+  'https://peekolitix.vercel.app', 
+  'https://peekolitix.in', 
+  'https://www.peekolitix.in',
+  'http://localhost:5173', 
+  'http://localhost:5174', 
+  'http://127.0.0.1:5173', 
+  'http://127.0.0.1:5174'
+];
+
 const corsOptions = {
-  origin: IS_PRODUCTION
-    ? ['https://peekolitix.vercel.app', 'https://peekolitix.in', 'https://www.peekolitix.in']
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || !IS_PRODUCTION) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   optionsSuccessStatus: 200
 };
 
