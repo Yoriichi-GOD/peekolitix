@@ -15,6 +15,7 @@ import { supabase } from './supabaseClient';
 import { PremiumProvider, usePremium, TIERS } from './context/PremiumContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { AnalyticsProvider, useAnalytics } from './context/AnalyticsContext';
 import AuthView from './components/AuthView';
 import UpgradeModal from './components/UpgradeModal';
 import DevPanel from './components/DevPanel';
@@ -106,6 +107,15 @@ function Dashboard() {
 
   const { tier, openUpgradeModal, canQuery, incrementQuery } = usePremium();
   const { signOut, user } = useAuth();
+  const { trackEvent, identifyUser } = useAnalytics();
+
+  // Identify user on login
+  useEffect(() => {
+    if (user?.id) {
+      identifyUser(user.id, user.email);
+      trackEvent('user_logged_in', { email: user.email });
+    }
+  }, [user]);
 
   const isPremiumMode = (mode) => Object.keys(PREMIUM_MODE_BASE).includes(mode);
 
@@ -202,6 +212,13 @@ function Dashboard() {
       };
       
       setHistory(prev => [newEntry, ...prev]); 
+
+      // Track successful query
+      trackEvent('briefing_generated', {
+        mode: currentMode,
+        perspective: currentPerspective,
+        dominanceScore: dominanceData.dominanceScore
+      });
 
       const saveBriefing = async () => {
         let token = 'dev-token';
@@ -354,11 +371,13 @@ const AuthWrapper = () => {
 function App() {
   return (
     <LanguageProvider>
-      <AuthProvider>
-        <PremiumProvider>
-          <AuthWrapper />
-        </PremiumProvider>
-      </AuthProvider>
+      <AnalyticsProvider>
+        <AuthProvider>
+          <PremiumProvider>
+            <AuthWrapper />
+          </PremiumProvider>
+        </AuthProvider>
+      </AnalyticsProvider>
     </LanguageProvider>
   );
 }

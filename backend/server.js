@@ -97,18 +97,28 @@ const checkQueryLimit = async (req, res, next) => {
 
   let userTier = 'FREE';
   if (supabase) {
+  if (supabase) {
     try {
-      const { data: profile } = await supabase
+      // Use .maybeSingle() instead of .single() to avoid 406/PGRST116 errors if user has no profile yet
+      const { data: profile, error: tierError } = await supabase
         .from('profiles')
         .select('tier')
         .eq('id', req.user.id)
-        .single();
+        .maybeSingle();
+      
+      if (tierError) throw tierError;
+
       if (profile && profile.tier) {
         userTier = profile.tier;
+      } else {
+        // Auto-provision a FREE profile if it doesn't exist to prevent future errors
+        console.log(`Auto-provisioning FREE profile for user: ${req.user.id}`);
+        await supabase.from('profiles').insert([{ id: req.user.id, tier: 'FREE', email: req.user.email }]).select().maybeSingle();
       }
     } catch (err) {
-      console.warn("Tier check failed, assuming FREE:", err.message);
+      console.warn("Tier check / auto-provision failed, assuming FREE:", err.message);
     }
+  }
   }
 
   if (userTier === 'FREE' || userTier === null || userTier === undefined) {
@@ -559,27 +569,52 @@ Example: "For deeper analysis, try asking: • [specific question 1] • [specif
 ${tierHeader ? tierHeader + '\n\nSTRICT: You MUST output the above premium deliverables using the exact headers provided.' : ''}
 STRICT: Avoid vague language. Use Indian official metrics and cite sources.${disambiguationDirective}`;
 
-    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${NVIDIA_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'meta/llama-3.1-70b-instruct',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...chatHistory,
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.1,
-        top_p: 1.0,
-        max_tokens: 3500,
-      }),
-    });
+    // 🛠️ RELIABILITY WRAPPER: Retry logic for NVIDIA API
+    let attempts = 0;
+    const maxAttempts = 3;
+    let response;
+    let data;
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "NVIDIA Engine Error");
+    while (attempts < maxAttempts) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000); // 25s timeout per attempt
+
+        response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: 'meta/llama-3.1-70b-instruct',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...chatHistory,
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.1,
+            top_p: 1.0,
+            max_tokens: 3500,
+          }),
+        });
+
+        clearTimeout(timeout);
+        data = await response.json();
+        
+        if (response.ok) break; // Success!
+        
+        console.warn(`NVIDIA Attempt ${attempts + 1} failed: ${data.error?.message || response.statusText}`);
+      } catch (err) {
+        console.error(`NVIDIA Attempt ${attempts + 1} Error: ${err.message}`);
+        if (attempts === maxAttempts - 1) throw err;
+      }
+      attempts++;
+      await new Promise(r => setTimeout(r, 1000 * attempts)); // Backoff
+    }
+
+    if (!response.ok) throw new Error(data.error?.message || "NVIDIA Engine Error after retries");
 
     res.json({
       success: true,

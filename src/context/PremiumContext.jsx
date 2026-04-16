@@ -85,7 +85,7 @@ export const PremiumProvider = ({ children }) => {
         .from('profiles')
         .select('tier')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // FIX: Using maybeSingle() to prevent 406 errors if profile doesn't exist yet
       if (data?.tier) {
         const dbTier = data.tier;
         setRealTier(dbTier);

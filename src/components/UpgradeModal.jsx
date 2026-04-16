@@ -4,6 +4,7 @@ import { X, Star, GraduationCap, Newspaper, Briefcase, Check, Zap } from 'lucide
 import { usePremium, TIERS } from '../context/PremiumContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import { useAnalytics } from '../context/AnalyticsContext';
 import './UpgradeModal.css';
 
 const PLAN_ICONS = {
@@ -46,10 +47,13 @@ const PLAN_FEATURES = {
 const UpgradeModal = () => {
   const { showUpgradeModal, closeUpgradeModal, upgradeTo, TIER_CONFIG, TIERS, targetTier, tier } = usePremium();
   const { user } = useAuth();
+  const { trackEvent } = useAnalytics();
 
   const handleUpgrade = async (planKey) => {
     const config = TIER_CONFIG[planKey];
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
+
+    trackEvent('upgrade_initiated', { plan: planKey });
 
     try {
       let token = 'dev-token';
@@ -98,8 +102,10 @@ const UpgradeModal = () => {
           const verifyData = await verifyRes.json();
           if (verifyData.success) {
             // 5. Upgrade User Clearance!
+            trackEvent('upgrade_successful', { plan: planKey });
             upgradeTo(planKey);
           } else {
+            trackEvent('upgrade_failed', { plan: planKey, reason: 'verification_failed' });
             alert('Payment secured but verification failed.');
           }
         },
@@ -111,10 +117,14 @@ const UpgradeModal = () => {
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response){
+        trackEvent('upgrade_failed', { plan: planKey, reason: response.error.description });
+      });
       rzp.open();
 
     } catch (err) {
       console.error("Payment Error:", err);
+      trackEvent('upgrade_failed', { plan: planKey, reason: err.message });
       alert('Payment could not be processed. Please try again or contact support.');
     }
   };
