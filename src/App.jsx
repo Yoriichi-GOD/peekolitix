@@ -156,7 +156,6 @@ function Dashboard() {
 
     setIsLoading(true);
     setIntelligenceData(null);
-    incrementQuery();
 
     try {
       const baseMode = isPremiumMode(currentMode) ? PREMIUM_MODE_BASE[currentMode] : currentMode;
@@ -168,6 +167,10 @@ function Dashboard() {
       const markdownRes = await generateIntelligenceReport(
         finalQuery, baseMode, currentPerspective, history.slice(-3), premiumKey
       );
+      
+      // Successfully fetched; permanently deduct query
+      incrementQuery();
+
       
       let dominanceData = { dominanceScore: 5, biasLevel: 'Low', winProbability: '50%' };
       try {
