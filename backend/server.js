@@ -96,37 +96,51 @@ const checkQueryLimit = async (req, res, next) => {
   if (!req.user || req.user.id === 'dev-user') return next();
 
   let userTier = 'FREE';
-  if (supabase) {
+  let queriesToday = 0;
+
   if (supabase) {
     try {
-      // Use .maybeSingle() instead of .single() to avoid 406/PGRST116 errors if user has no profile yet
+      // 1. Check Tier from profiles
       const { data: profile, error: tierError } = await supabase
         .from('profiles')
         .select('tier')
         .eq('id', req.user.id)
         .maybeSingle();
       
-      if (tierError) throw tierError;
-
       if (profile && profile.tier) {
         userTier = profile.tier;
       } else {
-        // Auto-provision a FREE profile if it doesn't exist to prevent future errors
-        console.log(`Auto-provisioning FREE profile for user: ${req.user.id}`);
-        await supabase.from('profiles').insert([{ id: req.user.id, tier: 'FREE', email: req.user.email }]).select().maybeSingle();
+        await supabase.from('profiles').insert([{ id: req.user.id, tier: 'FREE', email: req.user.email }]).maybeSingle();
+      }
+
+      // 2. Persistent Query Tracking — Count briefings from DB for today (UTC)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { count, error: countError } = await supabase
+        .from('debates') // Counting history instead of relying on memory
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', req.user.id)
+        .gte('created_at', today.toISOString());
+
+      if (!countError) {
+        queriesToday = count || 0;
+        userQueryTracker.set(req.user.id, queriesToday); // Sync memory map for speed
+      } else {
+        // Fallback to memory map if DB count fails
+        queriesToday = userQueryTracker.get(req.user.id) || 0;
       }
     } catch (err) {
-      console.warn("Tier check / auto-provision failed, assuming FREE:", err.message);
+      console.warn("Usage sync failed, assuming FREE:", err.message);
+      queriesToday = userQueryTracker.get(req.user.id) || 0;
     }
-  }
   }
 
-  if (userTier === 'FREE' || userTier === null || userTier === undefined) {
-    const currentCount = userQueryTracker.get(req.user.id) || 0;
-    if (currentCount >= 15) {
+  // 3. Enforce Limit
+  if (userTier === 'FREE') {
+    if (queriesToday >= 15) {
       return res.status(429).json({ error: 'Daily query limit reached for FREE tier.' });
     }
-    userQueryTracker.set(req.user.id, currentCount + 1);
   }
 
   next();
@@ -728,6 +742,40 @@ app.post('/api/save-briefing', generalLimiter, authenticate, async (req, res) =>
   } catch (err) { 
     console.error(`Save Briefing failed: ${err.message}`);
     res.status(500).json({ error: err.message }); 
+  }
+});
+
+app.post('/api/user-status', generalLimiter, authenticate, async (req, res) => {
+  try {
+    let userTier = 'FREE';
+    let queriesToday = 0;
+
+    if (supabase) {
+      // 1. Get Tier
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('tier')
+        .eq('id', req.user.id)
+        .maybeSingle();
+      
+      if (profile) userTier = profile.tier;
+
+      // 2. Get Today's Count
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { count } = await supabase
+        .from('debates')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', req.user.id)
+        .gte('created_at', today.toISOString());
+
+      queriesToday = count || 0;
+    }
+
+    res.json({ success: true, tier: userTier, queryCount: queriesToday });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

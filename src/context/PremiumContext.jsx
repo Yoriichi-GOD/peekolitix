@@ -77,23 +77,35 @@ export const PremiumProvider = ({ children }) => {
   const [targetTier, setTargetTier] = useState(null);
   const { user } = useAuth() || {};
 
-  // Fetch tier from Supabase on login (secure — no localStorage)
+  // Fetch tier and usage from backend on login (replaces local Map with persistent DB tracking)
   useEffect(() => {
     if (!user?.id || !supabase) return;
-    const fetchTier = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('tier')
-        .eq('id', user.id)
-        .maybeSingle(); // FIX: Using maybeSingle() to prevent 406 errors if profile doesn't exist yet
-      if (data?.tier) {
-        const dbTier = data.tier;
-        setRealTier(dbTier);
-        setTier(dbTier);
-        setActiveTier(dbTier);
+    const syncStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token || '';
+
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
+        const res = await fetch(`${BACKEND_URL}/api/user-status`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          setRealTier(data.tier);
+          setTier(data.tier);
+          setActiveTier(data.tier);
+          setQueryCount(data.queryCount);
+        }
+      } catch (err) {
+        console.error("Failed to sync premium status:", err);
       }
     };
-    fetchTier();
+    syncStatus();
   }, [user]);
 
   const isDev = realTier === TIERS.DEV;
