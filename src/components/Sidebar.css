@@ -5,7 +5,8 @@
   border-right: 1px solid var(--border-color);
   position: relative;
   z-index: 100; /* Higher z-index for mobile drawer */
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
@@ -32,24 +33,20 @@
   }
 }
 
-.sidebar::-webkit-scrollbar,
-.briefing-list::-webkit-scrollbar {
+.sidebar::-webkit-scrollbar {
   width: 4px;
 }
 
-.sidebar::-webkit-scrollbar-track,
-.briefing-list::-webkit-scrollbar-track {
+.sidebar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar::-webkit-scrollbar-thumb,
-.briefing-list::-webkit-scrollbar-thumb {
+.sidebar::-webkit-scrollbar-thumb {
   background: rgba(199, 125, 255, 0.2);
   border-radius: 10px;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover,
-.briefing-list::-webkit-scrollbar-thumb:hover {
+.sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(199, 125, 255, 0.5);
 }
 
@@ -193,9 +190,7 @@
 }
 
 .briefing-list {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 4px;
+  max-height: 180px;
 }
 
 .briefing-item {
