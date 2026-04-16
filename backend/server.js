@@ -588,7 +588,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
           },
           signal: controller.signal,
           body: JSON.stringify({
-            model: 'meta/llama-3.1-70b-instruct',
+            model: 'meta/llama-3.1-8b-instruct', // Switch to 8B for 10x speed and stability on free tier
             messages: [
               { role: 'system', content: systemPrompt },
               ...chatHistory,
@@ -596,7 +596,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
             ],
             temperature: 0.1,
             top_p: 1.0,
-            max_tokens: 3500,
+            max_tokens: 2000, // Reduced from 3500 to stay within Render's 30s timeout window
           }),
         });
 
