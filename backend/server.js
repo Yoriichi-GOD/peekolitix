@@ -56,6 +56,11 @@ const generalLimiter = rateLimit({
   max: 30,
   message: { error: 'Too many requests. Try again shortly.' }
 });
+const translateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20, // Translate gets its own generous limit — separate from AI queries
+  message: { error: 'Translation rate limit exceeded. Try again shortly.' }
+});
 
 // ========================================================================
 // SECURITY MIDDLEWARE: SUPABASE JWT AUTHENTICATION 
@@ -697,7 +702,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
 // ========================================================================
 // TRANSLATION ENGINE — uses NVIDIA to translate briefing content
 // ========================================================================
-app.post('/api/translate', aiLimiter, authenticate, async (req, res) => {
+app.post('/api/translate', translateLimiter, authenticate, async (req, res) => {
   try {
     const { text, targetLang = 'hi' } = req.body;
 

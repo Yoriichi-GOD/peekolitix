@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { saveAs } from "file-saver";
 
 export const exportToPDF = (reportContent, metadata) => {
   const doc = new jsPDF();
@@ -79,9 +78,16 @@ export const exportToPDF = (reportContent, metadata) => {
     doc.text(`Intelligence Briefing | Peekolitix Strategic Unit | Page ${i} of ${pageCount}`, pageWidth / 2, 288, { align: "center" });
   }
 
-  // --- 5. CHROME-PROOF DOWNLOAD via file-saver ---
+  // --- 5. CHROME-PROOF DOWNLOAD via direct anchor click ---
   const filename = `Intelligence_Report_${metadata.topic.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')}.pdf`;
   const pdfBlob = doc.output('blob');
-  saveAs(pdfBlob, filename);
+  const url = URL.createObjectURL(pdfBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 

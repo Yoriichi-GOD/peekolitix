@@ -27,11 +27,13 @@ const TranslatedReport = ({ markdown, ViewComponent = ReportView }) => {
   const { lang, isHindi } = useLanguage();
   const [translatedText, setTranslatedText] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState(null);
   const cacheRef = useRef({});
 
   useEffect(() => {
     if (!isHindi || !markdown) {
       setTranslatedText(null);
+      setTranslateError(null);
       return;
     }
 
@@ -45,11 +47,12 @@ const TranslatedReport = ({ markdown, ViewComponent = ReportView }) => {
     // Translate via backend
     const translateReport = async () => {
       setIsTranslating(true);
+      setTranslateError(null);
       try {
         let token = 'dev-token';
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
-          token = session?.access_token || '';
+          if (session?.access_token) token = session.access_token;
         }
 
         const BACKEND_URL_T = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
@@ -65,9 +68,14 @@ const TranslatedReport = ({ markdown, ViewComponent = ReportView }) => {
         if (data.success && data.translated) {
           cacheRef.current[cacheKey] = data.translated;
           setTranslatedText(data.translated);
+        } else {
+          const errMsg = data.error || `HTTP ${res.status}`;
+          console.error('Translation API error:', errMsg);
+          setTranslateError(errMsg);
         }
       } catch (err) {
         console.error('Translation failed:', err);
+        setTranslateError(err.message);
       } finally {
         setIsTranslating(false);
       }
@@ -80,6 +88,17 @@ const TranslatedReport = ({ markdown, ViewComponent = ReportView }) => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 40, color: '#ffa500' }}>
         <Loader2 size={28} style={{ animation: 'spin 1s linear infinite' }} />
         <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', letterSpacing: 1 }}>हिंदी में अनुवाद हो रहा है...</span>
+      </div>
+    );
+  }
+
+  if (isHindi && translateError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ padding: '10px 16px', background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: 6, color: '#ff8080', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+          ⚠️ अनुवाद विफल (Translation failed): {translateError}
+        </div>
+        <ViewComponent markdownContent={markdown} />
       </div>
     );
   }
