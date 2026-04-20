@@ -728,12 +728,13 @@ STRICT RULES:
 
     let translatedContent = null;
     let attempts = 0;
+    let lastError = "";
 
     // 1. NVIDIA Translator
     while (attempts < 2 && !translatedContent) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
+        const timeout = setTimeout(() => controller.abort(), 25000); // Wait up to 25s
 
         const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method: 'POST',
@@ -749,7 +750,7 @@ STRICT RULES:
               { role: 'user', content: trimmedText }
             ],
             temperature: 0.1,
-            max_tokens: 1500, // Reduced for speed and Render limits
+            max_tokens: 3000, // Increased to support long Hindi outputs
           }),
         });
 
@@ -759,8 +760,12 @@ STRICT RULES:
         if (response.ok) {
           translatedContent = data.choices[0].message.content;
           break;
+        } else {
+          lastError = `NVIDIA: ${data.error?.message || response.statusText}`;
         }
-      } catch (err) {}
+      } catch (err) {
+        lastError = `NVIDIA exception: ${err.message}`;
+      }
       attempts++;
     }
 
@@ -768,7 +773,7 @@ STRICT RULES:
     if (!translatedContent && process.env.GEMINI_API_KEY) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 18000);
+        const timeout = setTimeout(() => controller.abort(), 30000); // Wait up to 30s
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
           method: 'POST',
@@ -777,7 +782,7 @@ STRICT RULES:
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: sysPrompt }] },
             contents: [ { role: 'user', parts: [{ text: trimmedText }] } ],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1500 }
+            generationConfig: { temperature: 0.1, maxOutputTokens: 3000 }
           })
         });
 
@@ -786,12 +791,16 @@ STRICT RULES:
         
         if (response.ok && data.candidates && data.candidates.length > 0) {
           translatedContent = data.candidates[0].content.parts[0].text;
+        } else {
+          lastError = `Gemini: ${data.error?.message || response.statusText}`;
         }
-      } catch (err) {}
+      } catch (err) {
+        lastError = `Gemini exception: ${err.message}`;
+      }
     }
 
     if (!translatedContent) {
-      throw new Error("Translation Engine Unavailable");
+      throw new Error(`Translation Engine Unavailable. Context: ${lastError}`);
     }
 
     res.json({
