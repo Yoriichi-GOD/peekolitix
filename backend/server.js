@@ -637,12 +637,13 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
     }
 
     // PHASE 2: Gemini Flash Fallback (ultra-reliable, high speed)
+    let geminiErrorContext = "";
     if (!responseText && process.env.GEMINI_API_KEY) {
       console.log("⚠️ NVIDIA engine failed. Diverting traffic to Gemini Flash Fallback...");
       fallbackUsed = true;
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 20000);
+        const timeout = setTimeout(() => controller.abort(), 45000);
 
         // Map Chat History into Gemini Format
         const geminiHistory = chatHistory.map(msg => ({
@@ -662,9 +663,15 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
               ...geminiHistory,
               { role: 'user', parts: [{ text: userPrompt }] }
             ],
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 800,
+              maxOutputTokens: 2500,
             }
           })
         });
@@ -673,18 +680,25 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
         const data = await response.json();
         
         if (response.ok && data.candidates && data.candidates.length > 0) {
-          responseText = data.candidates[0].content.parts[0].text;
-          console.log("✅ Gemini Fallback succeeded.");
+          if (data.candidates[0].content) {
+            responseText = data.candidates[0].content.parts[0].text;
+            console.log("✅ Gemini Fallback succeeded.");
+          } else {
+            geminiErrorContext = `Gemini blocked query (Finish reason: ${data.candidates[0].finishReason})`;
+            console.error("Gemini Fallback unhandled state:", data);
+          }
         } else {
+          geminiErrorContext = `Gemini API Error: ${data.error?.message || response.statusText}`;
           console.error("Gemini Fallback unhandled state:", data);
         }
       } catch (err) {
+        geminiErrorContext = `Exception: ${err.message}`;
         console.error("Gemini Fallback Error:", err.message);
       }
     }
 
     if (!responseText) {
-      throw new Error("COGNITIVE ENGINE BUSTED: Both Primary (NVIDIA) and Secondary (Gemini) AI providers timed out or failed. Please try again.");
+      throw new Error(`COGNITIVE ENGINE BUSTED: Both Primary (NVIDIA) and Secondary (Gemini) AI providers timed out or failed. Please try again. [Context: ${geminiErrorContext}]`);
     }
 
     res.json({
@@ -744,6 +758,12 @@ STRICT RULES:
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: sysPrompt }] },
               contents: [ { role: 'user', parts: [{ text: trimmedText }] } ],
+              safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+              ],
               generationConfig: { temperature: 0.1, maxOutputTokens: 3000 }
             })
           });
