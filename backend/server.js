@@ -1183,6 +1183,37 @@ app.get('/terms', (req, res) => {
   </html>`);
 });
 
+app.get('/delete-account', (req, res) => {
+  res.send(`<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peekolitix — Account Deletion Request</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0b0c10; color: #f8f9fa; max-width: 800px; margin: 0 auto; padding: 40px 20px; line-height: 1.8; text-align: center; }
+      h1 { color: #d00000; font-size: 1.8rem; margin-bottom: 20px; }
+      p { color: #dee2e6; font-size: 1rem; margin-bottom: 20px; }
+      .email-box { display: inline-block; padding: 15px 30px; background: rgba(123,44,191,0.1); border: 1px solid rgba(123,44,191,0.5); border-radius: 8px; font-weight: bold; }
+      a { color: #c77dff; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Request Account Deletion</h1>
+    <p>If you would like to permanently delete your Peekolitix account and all associated intelligence briefing history, please send an email to our support team from the email address registered to your account.</p>
+    
+    <div class="email-box">
+      <a href="mailto:support@peekolitix.in?subject=Account%20Deletion%20Request">support@peekolitix.in</a>
+    </div>
+
+    <p style="margin-top: 30px; font-size: 0.85rem; color: #adb5bd;">
+      Please include "Account Deletion Request" in the subject line.<br>
+      Your data will be permanently wiped from our secure servers within 7-14 business days.
+    </p>
+  </body>
+  </html>`);
+});
+
 // ========================================================================
 // STATUS PAGE — production-protected
 // ========================================================================
