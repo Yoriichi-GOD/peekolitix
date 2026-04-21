@@ -24,25 +24,32 @@ const allowedOrigins = [
   'http://localhost:5174', 
   'http://127.0.0.1:5173', 
   'http://127.0.0.1:5174',
-  // Capacitor Android (androidScheme: 'https') sends requests from these origins
+  'http://localhost', // Some Capacitor/Emulator environments use this
   'https://localhost',
   'capacitor://localhost'
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1 || !IS_PRODUCTION) {
       callback(null, true);
     } else {
+      console.warn(`CORS Reject: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
+  credentials: true,
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+
+// Public health check for app diagnostics
+app.get('/api/ping', (req, res) => {
+  res.json({ success: true, message: 'Peekolitix Intelligence Gateway Active', timestamp: new Date().toISOString() });
+});
+
 app.use(helmet());
 app.use(express.json({ limit: '1mb' }));
 
@@ -703,7 +710,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
           body: JSON.stringify({
-            systemInstruction: {
+            system_instruction: {
               parts: [{ text: systemPrompt }]
             },
             contents: [
@@ -803,7 +810,7 @@ STRICT RULES:
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
-              systemInstruction: { parts: [{ text: sysPrompt }] },
+              system_instruction: { parts: [{ text: sysPrompt }] },
               contents: [ { role: 'user', parts: [{ text: trimmedText }] } ],
               safetySettings: [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },

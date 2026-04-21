@@ -203,11 +203,23 @@ const Sidebar = ({ currentMode, setMode, onSynthesize, history = [], onSelectHis
           </div>
         )}
 
+        <div className="sidebar-compliance" style={{ 
+          padding: '8px 12px', 
+          fontSize: '0.65rem', 
+          opacity: 0.5, 
+          textAlign: 'center',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          marginBottom: '8px'
+        }}>
+          {!isCollapsed && <span>Independent AI Platform • Not Gov Affiliated</span>}
+        </div>
+
         <button className="logout-btn" onClick={onSignOut} title={isCollapsed ? "Switch Identity" : ""}>
           <Power size={18} />
           {!isCollapsed && <span>SWITCH IDENTITY</span>}
         </button>
       </div>
+
     </motion.aside>
   );
 };

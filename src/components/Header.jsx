@@ -5,7 +5,7 @@ import { usePremium, TIERS } from '../context/PremiumContext';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 
-const Header = ({ user, onToggleMobileMenu }) => {
+const Header = ({ user, onToggleMobileMenu, onLogoClick }) => {
   const [briefingId] = useState(() => `BRF-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}-${new Date().toISOString().substring(2, 10).replace(/-/g, '')}`);
   const { tier, openUpgradeModal, TIER_CONFIG, queryCount } = usePremium();
   const { lang, toggleLang, isHindi } = useLanguage();
@@ -17,7 +17,7 @@ const Header = ({ user, onToggleMobileMenu }) => {
         <button className="mobile-burger-btn" onClick={onToggleMobileMenu}>
           <Menu size={20} />
         </button>
-        <div className="logo">
+        <div className="logo" onClick={onLogoClick} style={{ cursor: onLogoClick ? 'pointer' : 'default' }}>
           <img src="/tiger-logo.png" alt="Peekolitix Tiger" className="brand-tiger-logo" />
           <h1>PEEKOLITIX</h1>
         </div>

@@ -128,6 +128,18 @@ function Dashboard() {
   const { signOut, user } = useAuth();
   const { trackEvent, identifyUser } = useAnalytics();
 
+  const [debugTaps, setDebugTaps] = useState(0);
+  const [showDebug, setShowDebug] = useState(false);
+
+  const handleLogoClick = () => {
+    const newTaps = debugTaps + 1;
+    setDebugTaps(newTaps);
+    if (newTaps >= 5) {
+      setShowDebug(true);
+      setDebugTaps(0);
+    }
+  };
+
   // Identify user on login
   useEffect(() => {
     if (user?.id) {
@@ -136,7 +148,35 @@ function Dashboard() {
     }
   }, [user]);
 
+  const DebugPanel = () => (
+    <div style={{
+      position: 'fixed', bottom: 20, right: 20, background: '#111', border: '1px solid #7b2cbf',
+      padding: 15, borderRadius: 8, fontSize: '0.7rem', color: '#fff', zIndex: 9999, maxWidth: '280px',
+      boxShadow: '0 0 20px rgba(123,78,191,0.5)'
+    }}>
+      <h4 style={{ margin: '0 0 10px 0', color: '#c77dff' }}>🔍 SYSTEM DIAGNOSTICS</h4>
+      <div><strong>BACKEND:</strong> {BACKEND_URL}</div>
+      <div style={{ margin: '5px 0' }}><strong>SUPABASE:</strong> {import.meta.env.VITE_SUPABASE_URL}</div>
+      <div><strong>USER ID:</strong> {user?.id?.substring(0,8)}...</div>
+      <div style={{ margin: '5px 0' }}><strong>HIST COUNT:</strong> {history.length}</div>
+      <button onClick={() => setShowDebug(false)} style={{ marginTop: 10, background: '#7b2cbf', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: 4, cursor: 'pointer' }}>CLOSE</button>
+    </div>
+  );
+
   const isPremiumMode = (mode) => Object.keys(PREMIUM_MODE_BASE).includes(mode);
+
+  // Wake-up pulse for Render (Free Tier takes time to boot)
+  useEffect(() => {
+    const wakeBackend = async () => {
+      try {
+        await fetch(`${BACKEND_URL}/api/ping`);
+        console.log("Backend pulse successful.");
+      } catch (e) {
+        console.warn("Backend pulse failed - server might be sleeping.");
+      }
+    };
+    wakeBackend();
+  }, []);
 
   // Persistence: Fetch history on mount
   useEffect(() => {
@@ -354,7 +394,7 @@ function Dashboard() {
       />
       
       <div className="main-content">
-        <Header user={user} onToggleMobileMenu={() => setIsMobileMenuOpen(true)} />
+        <Header user={user} onToggleMobileMenu={() => setIsMobileMenuOpen(true)} onLogoClick={handleLogoClick} />
         
         <div className="content-grid">
           <BriefingArea
@@ -373,6 +413,7 @@ function Dashboard() {
 
       <UpgradeModal />
       <DevPanel />
+      {showDebug && <DebugPanel />}
     </div>
   );
 }

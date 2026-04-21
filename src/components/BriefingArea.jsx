@@ -20,6 +20,8 @@ const TOOLS = [
   { id: 'COMPARE', label: 'Compare', icon: Scale, desc: 'Side-by-Side' },
 ];
 
+import GovernmentDisclaimer from './GovernmentDisclaimer';
+
 const BriefingArea = ({ currentMode, setMode, currentPerspective, setPerspective, onQuerySubmit, isLoading, intelligenceData, premiumGates = [] }) => {
   const [query, setQuery] = useState('');
   const [toolsExpanded, setToolsExpanded] = useState(false);
@@ -136,6 +138,7 @@ const BriefingArea = ({ currentMode, setMode, currentPerspective, setPerspective
             {premiumGates.map(gateKey => (
               <PremiumGate key={gateKey} modeKey={gateKey} />
             ))}
+            <GovernmentDisclaimer />
           </div>
         ) : (
           <div className="empty-state">
@@ -145,9 +148,13 @@ const BriefingArea = ({ currentMode, setMode, currentPerspective, setPerspective
               ? t('Ask any question about Indian politics, policy, or governance. Or select a tool below for structured analysis.', lang)
               : t('Select a mode and perspective, then enter your query below to generate a factual, data-driven report.', lang)
             }</p>
+            <div style={{ marginTop: 'auto', width: '100%', maxWidth: '600px' }}>
+               <GovernmentDisclaimer />
+            </div>
           </div>
         )}
       </div>
+
 
       <div className="query-section">
         <div className="tools-bar">

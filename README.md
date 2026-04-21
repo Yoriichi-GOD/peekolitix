@@ -3,6 +3,10 @@
 A professional, India-focused political intelligence application. 
 Provides factual, data-driven intelligence on Indian politics, policy, and governance using the Gemini API.
 
+> [!IMPORTANT]
+> **GOVERNMENT DISCLAIMER**: Peekolitix is an independent, non-partisan AI platform. It is NOT affiliated with, authorized, or endorsed by the Government of India or any political entity. All government-related information is sourced from official public domains (india.gov.in, sansad.in, pib.gov.in, eci.gov.in).
+
+
 ## Core Dependencies Installed
 
 Here are the key libraries that power the application (already added to your `package.json`):
