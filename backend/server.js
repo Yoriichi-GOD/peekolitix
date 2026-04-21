@@ -154,7 +154,7 @@ const checkQueryLimit = async (req, res, next) => {
   next();
 };
 
-console.log('Peekolitix Intelligence Engine v2.4 (70B Enforcer) Starting...');
+console.log('Peekolitix Intelligence Engine v2.5 (GEMMA PRIMACY) Starting...');
 
 // ========================================================================
 // ALLOWED MODES WHITELIST
@@ -595,14 +595,57 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
     let responseText = null;
     let fallbackUsed = false;
     let attempts = 0;
-    const maxAttempts = 2; // Reduced attempts to prevent Render hitting 60s hard timeout
+    const maxAttempts = 2;
 
-    // PHASE 1: NVIDIA Fast-lane (cheap, usually fast)
+    // PHASE 1: OpenRouter Fast-lane (Primary - Gemma)
+    if (process.env.OPENROUTER_API_KEY) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout for OpenRouter
+
+        console.log("🚀 OpenRouter Engine: google/gemma-4-31b-it:free (Primary)");
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://peekolitix.in', // Required by OpenRouter for ranking
+            'X-Title': 'Peekolitix',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: 'google/gemma-2-9b-it:free', // Defaulting to the most common free gemma variant if 4-31b is unavailable
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...chatHistory,
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.1,
+            max_tokens: 1500,
+          }),
+        });
+
+        clearTimeout(timeout);
+        const data = await response.json();
+        
+        if (response.ok && data.choices && data.choices[0]) {
+          responseText = data.choices[0].message.content;
+          console.log("✅ OpenRouter Primary succeeded.");
+        } else {
+          console.warn(`OpenRouter Primary failed: ${data.error?.message || response.statusText}`);
+        }
+      } catch (err) {
+        console.warn(`OpenRouter Primary Error: ${err.message}`);
+      }
+    }
+
+    // PHASE 2: NVIDIA Secondary-lane (Llama 8B)
     while (attempts < maxAttempts && !responseText) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000); // 15s strict timeout
+        const timeout = setTimeout(() => controller.abort(), 15000); 
 
+        console.log(`📡 NVIDIA Engine: Attempting fallback ${attempts + 1}...`);
         const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -611,7 +654,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
           },
           signal: controller.signal,
           body: JSON.stringify({
-            model: 'meta/llama-3.1-8b-instruct', // Leanest variant
+            model: 'meta/llama-3.1-8b-instruct', 
             messages: [
               { role: 'system', content: systemPrompt },
               ...chatHistory,
@@ -619,7 +662,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
             ],
             temperature: 0.1,
             top_p: 1.0,
-            max_tokens: 800, // Reduced massively from 3500->2000->800 for instant response
+            max_tokens: 800, 
           }),
         });
 
@@ -628,7 +671,8 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
         
         if (response.ok) {
           responseText = data.choices[0].message.content;
-          break; // Success
+          console.log("✅ NVIDIA Fallback succeeded.");
+          break; 
         }
         
         console.warn(`NVIDIA Attempt ${attempts + 1} failed: ${data.error?.message || response.statusText}`);
@@ -636,13 +680,13 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
         console.warn(`NVIDIA Attempt ${attempts + 1} Error: ${err.message}`);
       }
       attempts++;
-      if (!responseText) await new Promise(r => setTimeout(r, 800)); // Short backoff
+      if (!responseText) await new Promise(r => setTimeout(r, 800)); 
     }
 
-    // PHASE 2: Gemini Flash Fallback (ultra-reliable, high speed)
+    // PHASE 3: Gemini Flash Fallback (Final Safety Net)
     let geminiErrorContext = "";
     if (!responseText && process.env.GEMINI_API_KEY) {
-      console.log("⚠️ NVIDIA engine failed. Diverting traffic to Gemini Flash Fallback...");
+      console.log("⚠️ OpenRouter and NVIDIA engines failed. Diverting traffic to Gemini Flash Fallback...");
       fallbackUsed = true;
       try {
         const controller = new AbortController();
@@ -701,7 +745,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
     }
 
     if (!responseText) {
-      throw new Error(`COGNITIVE ENGINE BUSTED: Both Primary (NVIDIA) and Secondary (Gemini) AI providers timed out or failed. Please try again. [Context: ${geminiErrorContext}]`);
+      throw new Error(`COGNITIVE ENGINE BUSTED: All providers (OpenRouter, NVIDIA, Gemini) timed out or failed. Please try again. [Context: ${geminiErrorContext}]`);
     }
 
     res.json({
