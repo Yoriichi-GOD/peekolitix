@@ -1114,7 +1114,7 @@ app.get('/privacy', (req, res) => {
     <p>Your briefing history is retained as long as your account is active. You may request deletion of your data by contacting us.</p>
 
     <h2>6. Your Rights</h2>
-    <p>You have the right to access, correct, or delete your personal data. Contact us at <a href="mailto:support@peekolitix.in">support@peekolitix.in</a>.</p>
+    <p>You have the right to access, correct, or delete your personal data. Contact us at <a href="mailto:peekolitix.support@gmail.com">peekolitix.support@gmail.com</a>.</p>
 
     <h2>7. Children's Privacy</h2>
     <p>Peekolitix is not intended for users under the age of 13. We do not knowingly collect data from children.</p>
@@ -1123,7 +1123,7 @@ app.get('/privacy', (req, res) => {
     <p>We may update this policy periodically. Continued use of the app constitutes acceptance of the updated policy.</p>
 
     <h2>9. Contact</h2>
-    <p>For privacy-related inquiries: <a href="mailto:support@peekolitix.in">support@peekolitix.in</a></p>
+    <p>For privacy-related inquiries: <a href="mailto:peekolitix.support@gmail.com">peekolitix.support@gmail.com</a></p>
   </body>
   </html>`);
 });
@@ -1178,7 +1178,7 @@ app.get('/terms', (req, res) => {
     <p>We reserve the right to suspend or terminate accounts that violate these terms or abuse the platform.</p>
 
     <h2>9. Contact</h2>
-    <p>For inquiries: <a href="mailto:support@peekolitix.in">support@peekolitix.in</a></p>
+    <p>For inquiries: <a href="mailto:peekolitix.support@gmail.com">peekolitix.support@gmail.com</a></p>
   </body>
   </html>`);
 });
@@ -1203,7 +1203,7 @@ app.get('/delete-account', (req, res) => {
     <p>If you would like to permanently delete your Peekolitix account and all associated intelligence briefing history, please send an email to our support team from the email address registered to your account.</p>
     
     <div class="email-box">
-      <a href="mailto:support@peekolitix.in?subject=Account%20Deletion%20Request">support@peekolitix.in</a>
+      <a href="mailto:peekolitix.support@gmail.com?subject=Account%20Deletion%20Request">peekolitix.support@gmail.com</a>
     </div>
 
     <p style="margin-top: 30px; font-size: 0.85rem; color: #adb5bd;">
