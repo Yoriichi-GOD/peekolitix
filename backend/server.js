@@ -23,7 +23,10 @@ const allowedOrigins = [
   'http://localhost:5173', 
   'http://localhost:5174', 
   'http://127.0.0.1:5173', 
-  'http://127.0.0.1:5174'
+  'http://127.0.0.1:5174',
+  // Capacitor Android (androidScheme: 'https') sends requests from these origins
+  'https://localhost',
+  'capacitor://localhost'
 ];
 
 const corsOptions = {
@@ -1054,6 +1057,130 @@ app.post('/api/verify-payment', generalLimiter, authenticate, async (req, res) =
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ========================================================================
+// PLAY STORE COMPLIANCE — Privacy Policy & Terms of Service (public)
+// ========================================================================
+app.get('/privacy', (req, res) => {
+  res.send(`<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peekolitix — Privacy Policy</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0b0c10; color: #f8f9fa; max-width: 800px; margin: 0 auto; padding: 40px 20px; line-height: 1.8; }
+      h1 { color: #9d4edd; font-size: 1.8rem; margin-bottom: 8px; }
+      h2 { color: #c77dff; font-size: 1.2rem; margin-top: 32px; border-bottom: 1px solid rgba(123,44,191,0.3); padding-bottom: 8px; }
+      .updated { color: #adb5bd; font-size: 0.85rem; margin-bottom: 32px; }
+      p, li { color: #dee2e6; font-size: 0.95rem; }
+      a { color: #c77dff; }
+      ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: April 2026</p>
+
+    <h2>1. Information We Collect</h2>
+    <p>Peekolitix collects the following data when you use the app:</p>
+    <ul>
+      <li><strong>Account Information:</strong> Email address and authentication tokens via Supabase Auth.</li>
+      <li><strong>Usage Data:</strong> Queries submitted, analysis modes used, and interaction patterns (via PostHog analytics).</li>
+      <li><strong>Payment Data:</strong> Processed securely by Razorpay. We do NOT store your card details.</li>
+    </ul>
+
+    <h2>2. How We Use Your Data</h2>
+    <ul>
+      <li>To provide AI-powered political intelligence analysis.</li>
+      <li>To save your briefing history for future reference.</li>
+      <li>To enforce daily query limits based on your subscription tier.</li>
+      <li>To improve app performance and user experience through anonymized analytics.</li>
+    </ul>
+
+    <h2>3. Data Storage & Security</h2>
+    <p>Your data is stored securely on Supabase (PostgreSQL) with Row Level Security (RLS) enabled. All API communication uses HTTPS encryption. Authentication tokens are validated server-side on every request.</p>
+
+    <h2>4. Third-Party Services</h2>
+    <ul>
+      <li><strong>Supabase</strong> — Authentication and data persistence.</li>
+      <li><strong>NVIDIA AI / Google Gemini</strong> — AI analysis generation (your queries are processed but not stored by these providers beyond their standard retention policies).</li>
+      <li><strong>Razorpay</strong> — Payment processing (PCI-DSS compliant).</li>
+      <li><strong>PostHog</strong> — Privacy-friendly product analytics.</li>
+    </ul>
+
+    <h2>5. Data Retention</h2>
+    <p>Your briefing history is retained as long as your account is active. You may request deletion of your data by contacting us.</p>
+
+    <h2>6. Your Rights</h2>
+    <p>You have the right to access, correct, or delete your personal data. Contact us at <a href="mailto:support@peekolitix.in">support@peekolitix.in</a>.</p>
+
+    <h2>7. Children's Privacy</h2>
+    <p>Peekolitix is not intended for users under the age of 13. We do not knowingly collect data from children.</p>
+
+    <h2>8. Changes to This Policy</h2>
+    <p>We may update this policy periodically. Continued use of the app constitutes acceptance of the updated policy.</p>
+
+    <h2>9. Contact</h2>
+    <p>For privacy-related inquiries: <a href="mailto:support@peekolitix.in">support@peekolitix.in</a></p>
+  </body>
+  </html>`);
+});
+
+app.get('/terms', (req, res) => {
+  res.send(`<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peekolitix — Terms of Service</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0b0c10; color: #f8f9fa; max-width: 800px; margin: 0 auto; padding: 40px 20px; line-height: 1.8; }
+      h1 { color: #9d4edd; font-size: 1.8rem; margin-bottom: 8px; }
+      h2 { color: #c77dff; font-size: 1.2rem; margin-top: 32px; border-bottom: 1px solid rgba(123,44,191,0.3); padding-bottom: 8px; }
+      .updated { color: #adb5bd; font-size: 0.85rem; margin-bottom: 32px; }
+      p, li { color: #dee2e6; font-size: 0.95rem; }
+      a { color: #c77dff; }
+      ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <h1>Terms of Service</h1>
+    <p class="updated">Last updated: April 2026</p>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>By using Peekolitix, you agree to these Terms of Service. If you do not agree, please discontinue use immediately.</p>
+
+    <h2>2. Service Description</h2>
+    <p>Peekolitix is an AI-powered Indian Political Intelligence Engine that provides data-backed political analysis, debate preparation, and policy research. The service uses AI models and should NOT be treated as legal, financial, or electoral advice.</p>
+
+    <h2>3. User Responsibilities</h2>
+    <ul>
+      <li>You must provide accurate information when creating an account.</li>
+      <li>You must not abuse the AI engine to generate hate speech, misinformation, or incitement.</li>
+      <li>You must not attempt to bypass rate limits, premium tier restrictions, or authentication mechanisms.</li>
+    </ul>
+
+    <h2>4. AI Disclaimer</h2>
+    <p><strong>Peekolitix uses AI to generate analysis. AI can make errors.</strong> All outputs should be independently verified against official sources (PRS, PIB, EC, MoSPI, RBI) before being used in any professional, academic, or journalistic context.</p>
+
+    <h2>5. Premium Tiers & Payments</h2>
+    <p>Premium features are available through one-time payments processed by Razorpay. All payments are final. Tier upgrades are applied immediately upon successful payment verification.</p>
+
+    <h2>6. Intellectual Property</h2>
+    <p>The Peekolitix brand, UI design, and proprietary analysis frameworks are protected. AI-generated outputs may be used by the user for personal and professional purposes.</p>
+
+    <h2>7. Limitation of Liability</h2>
+    <p>Peekolitix is provided "as is" without warranties. We are not liable for any decisions made based on AI-generated analysis.</p>
+
+    <h2>8. Termination</h2>
+    <p>We reserve the right to suspend or terminate accounts that violate these terms or abuse the platform.</p>
+
+    <h2>9. Contact</h2>
+    <p>For inquiries: <a href="mailto:support@peekolitix.in">support@peekolitix.in</a></p>
+  </body>
+  </html>`);
 });
 
 // ========================================================================
