@@ -95,7 +95,6 @@ const UpgradeModal = () => {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              user_id: user?.id,
               plan_key: planKey
             })
           });

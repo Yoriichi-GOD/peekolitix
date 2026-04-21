@@ -153,8 +153,7 @@ function Dashboard() {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ user_id: user?.id })
+          }
         });
         const data = await response.json();
         if (data.success) {
@@ -256,7 +255,6 @@ function Dashboard() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            user_id: user?.id,
             query,
             mode: currentMode,
             perspective: currentPerspective,
