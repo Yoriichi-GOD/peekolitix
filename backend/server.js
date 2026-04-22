@@ -710,7 +710,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
           body: JSON.stringify({
-            system_instruction: {
+            systemInstruction: {
               parts: [{ text: systemPrompt }]
             },
             contents: [
@@ -810,7 +810,7 @@ STRICT RULES:
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
-              system_instruction: { parts: [{ text: sysPrompt }] },
+              systemInstruction: { parts: [{ text: sysPrompt }] },
               contents: [ { role: 'user', parts: [{ text: trimmedText }] } ],
               safetySettings: [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
