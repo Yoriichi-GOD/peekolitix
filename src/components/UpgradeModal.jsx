@@ -88,24 +88,7 @@ const UpgradeModal = () => {
           name: user?.email?.split('@')[0] || 'Analyst',
           email: user?.email || 'analyst@peekolitix.com',
         },
-        theme: { color: config.color },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR",
-                instruments: [
-                  { method: "vpa" }, // Fallback for supported environments
-                  { method: "upi" }, // Intent handling
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.cards", "block.netbanking"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
-        },
+        theme: { color: config.color }
       };
 
       try {

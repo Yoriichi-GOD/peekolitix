@@ -9,7 +9,6 @@ import helmet from 'helmet';
 import supabase from './src/config/supabase.js';
 
 const app = express();
-app.set('trust proxy', 1); // Trust Render's proxy for accurate rate limiting
 const PORT = process.env.PORT || 3001;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -1047,50 +1046,6 @@ app.post('/api/create-order', generalLimiter, authenticate, async (req, res) => 
 
     res.json({ success: true, order });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/create-payment-link', generalLimiter, authenticate, async (req, res) => {
-  try {
-    if (!razorpay) return res.status(503).json({ error: 'Payment system not configured' });
-
-    const { plan } = req.body;
-    const planUpper = (plan || '').toUpperCase();
-    const amount = PLAN_PRICES[planUpper];
-
-    if (!amount) {
-      return res.status(400).json({ error: `Invalid plan: "${plan}".` });
-    }
-
-    const options = {
-      amount: amount * 100, 
-      currency: 'INR',
-      accept_partial: false,
-      description: `Upgrade to ${planUpper} Tier`,
-      customer: {
-        name: req.user?.email?.split('@')[0] || 'Analyst',
-        email: req.user?.email || 'analyst@peekolitix.com',
-      },
-      notify: {
-        sms: false,
-        email: true,
-      },
-      reminder_enable: true,
-      notes: {
-        plan: planUpper,
-        user_id: req.user?.id || 'unknown'
-      },
-      callback_url: `https://peekolitix.in`, 
-      callback_method: 'get'
-    };
-
-    const paymentLink = await razorpay.paymentLink.create(options);
-    if (!paymentLink) return res.status(500).json({ error: 'Failed to create payment link' });
-
-    res.json({ success: true, short_url: paymentLink.short_url });
-  } catch (err) {
-    console.error("Payment Link Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
