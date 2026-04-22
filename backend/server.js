@@ -612,18 +612,18 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout for OpenRouter
 
-        console.log("🚀 OpenRouter Engine: google/gemma-4-31b-it:free (Primary)");
+        console.log("🚀 OpenRouter Engine: meta-llama/llama-3.1-8b-instruct:free (High-Stability Primary)");
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://peekolitix.in', // Required by OpenRouter for ranking
+            'HTTP-Referer': 'https://peekolitix.in', 
             'X-Title': 'Peekolitix',
           },
           signal: controller.signal,
           body: JSON.stringify({
-            model: 'google/gemma-2-9b-it:free', // Defaulting to the most common free gemma variant if 4-31b is unavailable
+            model: 'meta-llama/llama-3.1-8b-instruct:free', 
             messages: [
               { role: 'system', content: systemPrompt },
               ...chatHistory,
