@@ -9,6 +9,8 @@ import helmet from 'helmet';
 import supabase from './src/config/supabase.js';
 
 const app = express();
+// Mandatory for Render/Vercel/Heroku proxies to allow rate-limiting
+app.set('trust proxy', 1); 
 const PORT = process.env.PORT || 3001;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
