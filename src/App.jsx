@@ -119,6 +119,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 const DeepLinkHandler = () => {
   const [showRedirect, setShowRedirect] = useState(false);
   const [type, setType] = useState('access');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -126,6 +127,10 @@ const DeepLinkHandler = () => {
       setShowRedirect(true);
       if (hash.includes('type=recovery')) setType('recovery');
       if (hash.includes('type=signup')) setType('verification');
+      
+      // Detect mobile device
+      const isMob = /Android|iPhone/i.test(navigator.userAgent);
+      setIsMobile(isMob);
     }
   }, []);
 
@@ -133,38 +138,55 @@ const DeepLinkHandler = () => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: -50 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
       className="deep-link-bridge glass-panel"
       style={{
-        position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 10000, padding: '20px', width: '90%', maxWidth: '400px',
-        textAlign: 'center', background: 'rgba(17,17,17,0.95)', border: '2px solid #c41e3a',
-        boxShadow: '0 0 30px rgba(196,30,58,0.5)', color: '#fff', borderRadius: '12px'
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        zIndex: 10000, padding: '30px', width: '90%', maxWidth: '400px',
+        textAlign: 'center', background: 'rgba(17,17,17,0.98)', border: '2px solid #c41e3a',
+        boxShadow: '0 0 50px rgba(196,30,58,0.6)', color: '#fff', borderRadius: '16px'
       }}
     >
-      <div style={{ color: '#00ff00', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px' }}>
-        {type === 'recovery' ? 'RECOVERY PROTOCOL VERIFIED' : 'IDENTITY CONFIRMED'}
+      <div style={{ color: '#00ff00', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px', fontSize: '1.2rem' }}>
+        {type === 'recovery' ? 'RECOVERY VERIFIED' : 'IDENTITY CONFIRMED'}
       </div>
-      <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '20px' }}>
-        Your credentials have been successfully validated.
+      <p style={{ fontSize: '0.95rem', color: '#ccc', marginBottom: '30px' }}>
+        {isMobile 
+          ? 'Your strategic clearance has been validated. Return to the mobile application to continue.'
+          : 'Security clearance granted. You are now logged into the Strategic Intelligence Dashboard.'}
       </p>
-      <a 
-        href="com.peekolitix.app://auth-callback" 
-        style={{
-          display: 'block', background: '#c41e3a', color: '#fff', padding: '15px',
-          borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none',
-          boxShadow: '0 4px 15px rgba(196,30,58,0.3)'
-        }}
-        onClick={() => setShowRedirect(false)}
-      >
-        RETURN TO MOBILE APP
-      </a>
+      
+      {isMobile ? (
+        <a 
+          href="com.peekolitix.app://auth-callback" 
+          style={{
+            display: 'block', background: '#c41e3a', color: '#fff', padding: '16px',
+            borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none',
+            boxShadow: '0 4px 20px rgba(196,30,58,0.4)', letterSpacing: '1px'
+          }}
+          onClick={() => setShowRedirect(false)}
+        >
+          RETURN TO MOBILE APP
+        </a>
+      ) : (
+        <button 
+          style={{
+            width: '100%', background: '#7b2cbf', color: '#fff', padding: '16px',
+            borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(123,78,191,0.4)', letterSpacing: '1px'
+          }}
+          onClick={() => setShowRedirect(false)}
+        >
+          ENTER THE WAR ROOM
+        </button>
+      )}
+      
       <button 
         onClick={() => setShowRedirect(false)}
-        style={{ background: 'transparent', border: 'none', color: '#666', marginTop: '15px', fontSize: '0.8rem', cursor: 'pointer' }}
+        style={{ background: 'transparent', border: 'none', color: '#666', marginTop: '20px', fontSize: '0.8rem', cursor: 'pointer' }}
       >
-        Stay on Website
+        Dismiss
       </button>
     </motion.div>
   );
