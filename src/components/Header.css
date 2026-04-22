@@ -20,18 +20,15 @@
   gap: 12px;
 }
 
-.brand-tiger-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(196, 30, 58, 0.6);
-  box-shadow: 0 0 12px rgba(196, 30, 58, 0.35);
-  transition: box-shadow 0.3s ease;
+.brand-mask-logo {
+  height: 38px;
+  width: auto;
+  margin-right: 12px;
+  transition: transform 0.3s ease;
 }
 
-.brand-tiger-logo:hover {
-  box-shadow: 0 0 20px rgba(196, 30, 58, 0.6);
+.brand-mask-logo:hover {
+  transform: rotate(-5deg) scale(1.05);
 }
 
 .logo h1 {

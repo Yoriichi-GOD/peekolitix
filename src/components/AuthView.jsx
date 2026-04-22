@@ -69,10 +69,7 @@ const AuthView = () => {
         className="auth-card glass-panel"
       >
         <div className="auth-header">
-          <div className="auth-logo">
-            <img src="/peekolitix_logo.png" alt="Peekolitix Mask" className="auth-tiger-logo" />
-            <span className="logo-text">PEEKOLITIX</span>
-          </div>
+            <img src="/peekolitix_logo.png" alt="Peekolitix Mask" className="auth-mask-logo" />
           <h2 className="auth-title">
             {isRecovery ? 'RECOVER ACCESS' : isLogin ? 'SECURITY CLEARANCE' : 'ESTABLISH IDENTITY'}
           </h2>

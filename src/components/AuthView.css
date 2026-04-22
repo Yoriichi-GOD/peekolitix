@@ -64,10 +64,11 @@
   margin-bottom: 24px;
 }
 
-.auth-tiger-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+.auth-mask-logo {
+  height: 60px;
+  width: auto;
+  margin: 0 auto 15px auto;
+  display: block;
   object-fit: cover;
   border: 2px solid rgba(196, 30, 58, 0.5);
   box-shadow: 0 0 20px rgba(196, 30, 58, 0.35);
