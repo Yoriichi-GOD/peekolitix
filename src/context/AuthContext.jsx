@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(devMode ? { id: 'dev-user', email: 'dev@peekolitix.local' } : null);
   const [loading, setLoading] = useState(!devMode);
 
-  const [isRecovery, setIsRecovery] = useState(false);
+  const [isVaultLocked, setIsVaultLocked] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -27,14 +27,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       
       if (event === 'PASSWORD_RECOVERY') {
-        setTimeout(() => setIsRecovery(true), 0);
-        setIsRecovery(true);
+        setTimeout(() => setIsVaultLocked(true), 0);
+        setIsVaultLocked(true);
       }
     });
 
     // Check URL immediately
     if (window.location.href.includes('type=recovery') || window.location.hash.includes('type=recovery')) {
-      setIsRecovery(true);
+      setIsVaultLocked(true);
     }
 
     return () => subscription.unsubscribe();
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, isRecovery, setIsRecovery }}>
+    <AuthContext.Provider value={{ user, loading, signOut, isVaultLocked, setIsVaultLocked }}>
       {children}
     </AuthContext.Provider>
   );

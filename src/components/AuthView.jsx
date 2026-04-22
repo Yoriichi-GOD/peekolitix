@@ -6,21 +6,14 @@ import './AuthView.css';
 import { useAuth } from '../context/AuthContext';
 
 const AuthView = () => {
-  const { isRecovery: globalIsRecovery, setIsRecovery: setGlobalIsRecovery } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
-  const [isRecoveryLocal, setIsRecoveryLocal] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [cooldown, setCooldown] = useState(0);
-
-  const isRecovery = globalIsRecovery || isRecoveryLocal;
-  const setIsRecovery = (val) => {
-    setIsRecoveryLocal(val);
-    setGlobalIsRecovery(val);
-  };
 
   useEffect(() => {
     if (cooldown > 0) {

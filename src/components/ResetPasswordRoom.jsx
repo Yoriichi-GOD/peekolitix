@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import './ResetPasswordRoom.css';
 
 const ResetPasswordRoom = () => {
-  const { setIsRecovery } = useAuth();
+  const { setIsVaultLocked } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,7 @@ const ResetPasswordRoom = () => {
       
       setSuccess(true);
       setTimeout(() => {
-        setIsRecovery(false);
+        setIsVaultLocked(false);
         window.location.hash = ''; // Clear the security fragment
       }, 2500);
     } catch (err) {

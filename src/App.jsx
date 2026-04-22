@@ -492,7 +492,7 @@ function Dashboard() {
 }
 
 const AuthWrapper = () => {
-  const { user, loading, isRecovery } = useAuth();
+  const { user, loading, isVaultLocked } = useAuth();
 
   if (loading) return (
     <div className="app-loading-screen">
@@ -501,9 +501,8 @@ const AuthWrapper = () => {
     </div>
   );
 
-  // LEVEL 0 GATE: If in recovery mode, show the Reset Room ONLY.
-  // This blocks the dashboard and the login screen completely.
-  if (isRecovery) {
+  // LEVEL 0 GATE: If the Security Vault is locked (Token detected), show Reset Room ONLY.
+  if (isVaultLocked) {
     return <ResetPasswordRoom />;
   }
 
