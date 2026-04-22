@@ -1,20 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Mail, ArrowRight, Activity } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import './AuthView.css';
+import { useAuth } from '../context/AuthContext';
 
 const AuthView = () => {
+  const { isRecovery: globalIsRecovery, setIsRecovery: setGlobalIsRecovery } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
-  const [isRecovery, setIsRecovery] = useState(false);
+  const [isRecoveryLocal, setIsRecoveryLocal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  const isRecovery = globalIsRecovery || isRecoveryLocal;
+  const setIsRecovery = (val) => {
+    setIsRecoveryLocal(val);
+    setGlobalIsRecovery(val);
+  };
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
 
   const handleAuth = async (e) => {
     e.preventDefault();
+    if (cooldown > 0) return;
+    
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -26,6 +45,7 @@ const AuthView = () => {
         });
         if (error) throw error;
         setSuccess("RECOVERY PROTOCOL: Reset link dispatched to your secure mail.");
+        setCooldown(15);
       } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -43,6 +63,7 @@ const AuthView = () => {
           setError("This identity is already established. Please attempt access via Login.");
         } else {
           setSuccess("SECURITY PROTOCOL: Verification link dispatched. Check your encrypted mail.");
+          setCooldown(15);
         }
       }
     } catch (err) {
@@ -106,9 +127,14 @@ const AuthView = () => {
           {error && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-error">{error}</motion.p>}
           {success && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-success" style={{ color: '#00ff00', fontSize: '0.8rem', padding: '10px' }}>{success}</motion.p>}
 
-          <button className="auth-submit-btn" disabled={loading}>
-            <span>{loading ? 'VERIFYING...' : isRecovery ? 'INITIATE RECOVERY' : isLogin ? 'INITIATE ACCESS' : 'CREATE PROTOCOL'}</span>
-            {!loading && <ArrowRight size={18} />}
+          <button className="auth-submit-btn" disabled={loading || cooldown > 0}>
+            <span>
+              {loading ? 'VERIFYING...' : 
+               cooldown > 0 ? `RETRY IN ${cooldown}s` :
+               isRecovery ? 'INITIATE RECOVERY' : 
+               isLogin ? 'INITIATE ACCESS' : 'CREATE PROTOCOL'}
+            </span>
+            {!loading && cooldown === 0 && <ArrowRight size={18} />}
           </button>
         </form>
 

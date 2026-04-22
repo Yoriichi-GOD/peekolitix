@@ -19,6 +19,7 @@ import { AnalyticsProvider, useAnalytics } from './context/AnalyticsContext';
 import AuthView from './components/AuthView';
 import UpgradeModal from './components/UpgradeModal';
 import DevPanel from './components/DevPanel';
+import ResetPasswordRoom from './components/ResetPasswordRoom';
 
 // =====================================================================
 // TranslatedReport — wraps any report view with Hindi translation layer
@@ -118,17 +119,15 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 
 const DeepLinkHandler = () => {
   const [showRedirect, setShowRedirect] = useState(false);
-  const [type, setType] = useState('access');
+  const [type, setType] = useState('verification');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('type=signup')) {
+    // Only handle verification here; recovery is handled by the ResetPasswordRoom gate
+    if (hash.includes('type=signup')) {
       setShowRedirect(true);
-      if (hash.includes('type=recovery')) setType('recovery');
-      if (hash.includes('type=signup')) setType('verification');
-      
-      // Detect mobile device
+      setType('verification');
       const isMob = /Android|iPhone/i.test(navigator.userAgent);
       setIsMobile(isMob);
     }
@@ -143,13 +142,13 @@ const DeepLinkHandler = () => {
       className="deep-link-bridge glass-panel"
       style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-        zIndex: 10000, padding: '30px', width: '90%', maxWidth: '400px',
-        textAlign: 'center', background: 'rgba(17,17,17,0.98)', border: '2px solid #c41e3a',
-        boxShadow: '0 0 50px rgba(196,30,58,0.6)', color: '#fff', borderRadius: '16px'
+        zIndex: 40000, padding: '30px', width: '90%', maxWidth: '400px',
+        textAlign: 'center', background: 'rgba(17,17,17,0.98)', border: '2px solid #7b2cbf',
+        boxShadow: '0 0 50px rgba(123,78,191,0.6)', color: '#fff', borderRadius: '16px'
       }}
     >
       <div style={{ color: '#00ff00', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px', fontSize: '1.2rem' }}>
-        {type === 'recovery' ? 'RECOVERY VERIFIED' : 'IDENTITY CONFIRMED'}
+        IDENTITY CONFIRMED
       </div>
       <p style={{ fontSize: '0.95rem', color: '#ccc', marginBottom: '30px' }}>
         {isMobile 
@@ -161,9 +160,9 @@ const DeepLinkHandler = () => {
         <a 
           href="com.peekolitix.app://auth-callback" 
           style={{
-            display: 'block', background: '#c41e3a', color: '#fff', padding: '16px',
+            display: 'block', background: '#7b2cbf', color: '#fff', padding: '16px',
             borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none',
-            boxShadow: '0 4px 20px rgba(196,30,58,0.4)', letterSpacing: '1px'
+            boxShadow: '0 4px 20px rgba(123,78,191,0.4)', letterSpacing: '1px'
           }}
           onClick={() => setShowRedirect(false)}
         >
@@ -172,22 +171,15 @@ const DeepLinkHandler = () => {
       ) : (
         <button 
           style={{
-            width: '100%', background: '#7b2cbf', color: '#fff', padding: '16px',
-            borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(123,78,191,0.4)', letterSpacing: '1px'
+            width: '100%', background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '16px',
+            borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+            letterSpacing: '1px'
           }}
           onClick={() => setShowRedirect(false)}
         >
           ENTER THE WAR ROOM
         </button>
       )}
-      
-      <button 
-        onClick={() => setShowRedirect(false)}
-        style={{ background: 'transparent', border: 'none', color: '#666', marginTop: '20px', fontSize: '0.8rem', cursor: 'pointer' }}
-      >
-        Dismiss
-      </button>
     </motion.div>
   );
 };
@@ -500,7 +492,7 @@ function Dashboard() {
 }
 
 const AuthWrapper = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isRecovery } = useAuth();
 
   if (loading) return (
     <div className="app-loading-screen">
@@ -508,6 +500,12 @@ const AuthWrapper = () => {
       <span>SECURE BOOT INITIATED...</span>
     </div>
   );
+
+  // LEVEL 0 GATE: If in recovery mode, show the Reset Room ONLY.
+  // This blocks the dashboard and the login screen completely.
+  if (isRecovery) {
+    return <ResetPasswordRoom />;
+  }
 
   return user ? <Dashboard /> : <AuthView />;
 };
@@ -518,7 +516,6 @@ function App() {
       <AnalyticsProvider>
         <AuthProvider>
           <PremiumProvider>
-            <DeepLinkHandler />
             <AuthWrapper />
           </PremiumProvider>
         </AuthProvider>
