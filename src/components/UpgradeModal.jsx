@@ -5,6 +5,7 @@ import { usePremium, TIERS } from '../context/PremiumContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import { useAnalytics } from '../context/AnalyticsContext';
+import { Checkout } from 'capacitor-razorpay';
 import './UpgradeModal.css';
 
 const PLAN_ICONS = {
@@ -75,52 +76,53 @@ const UpgradeModal = () => {
 
       if (!orderData.success) throw new Error("Order creation failed");
 
-      // 3. Spawns Razorpay Checkout Window
+      // 3. Spawns Native Razorpay Checkout
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Dynamically loaded from Vercel/Local Env
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.order.amount,
         currency: 'INR',
         name: 'Peekolitix',
         description: `Upgrade to ${config.label} Tier`,
         order_id: orderData.order.id,
-        handler: async function (response) {
-          // 4. Contact Backend: Verify Payment Signature
-          const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              user_id: user?.id,
-              plan_key: planKey
-            })
-          });
-          const verifyData = await verifyRes.json();
-          if (verifyData.success) {
-            // 5. Upgrade User Clearance!
-            trackEvent('upgrade_successful', { plan: planKey });
-            upgradeTo(planKey);
-          } else {
-            trackEvent('upgrade_failed', { plan: planKey, reason: 'verification_failed' });
-            alert('Payment secured but verification failed.');
-          }
-        },
         prefill: {
-          name: 'Analyst',
-          email: 'analyst@peekolitix.com',
+          name: user?.email?.split('@')[0] || 'Analyst',
+          email: user?.email || 'analyst@peekolitix.com',
         },
         theme: { color: config.color }
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response){
-        trackEvent('upgrade_failed', { plan: planKey, reason: response.error.description });
-      });
-      rzp.open();
+      try {
+        const result = await Checkout.open(options);
+        
+        // 4. Contact Backend: Verify Payment Signature
+        const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            razorpay_order_id: result.razorpay_order_id,
+            razorpay_payment_id: result.razorpay_payment_id,
+            razorpay_signature: result.razorpay_signature,
+            user_id: user?.id,
+            plan_key: planKey
+          })
+        });
+
+        const verifyData = await verifyRes.json();
+        if (verifyData.success) {
+          trackEvent('upgrade_successful', { plan: planKey });
+          upgradeTo(planKey);
+        } else {
+          trackEvent('upgrade_failed', { plan: planKey, reason: 'verification_failed' });
+          alert('Payment secured but verification failed.');
+        }
+      } catch (checkoutError) {
+        // checkoutError will contain the detail of failed payment or cancellation
+        trackEvent('upgrade_failed', { plan: planKey, reason: checkoutError.reason || 'Payment cancelled' });
+        console.error("Native Checkout Failure:", checkoutError);
+      }
 
     } catch (err) {
       console.error("Payment Error:", err);
