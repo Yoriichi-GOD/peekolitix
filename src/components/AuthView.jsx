@@ -6,18 +6,27 @@ import './AuthView.css';
 
 const AuthView = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isRecovery, setIsRecovery] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
-      if (isLogin) {
+      if (isRecovery) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: 'com.peekolitix.app://'
+        });
+        if (error) throw error;
+        setSuccess("RECOVERY PROTOCOL: Reset link dispatched to your secure mail.");
+      } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
@@ -30,11 +39,10 @@ const AuthView = () => {
         });
         if (error) throw error;
         
-        // Supabase returns an empty user if identity already exists on some configs
         if (data?.user?.identities?.length === 0) {
           setError("This identity is already established. Please attempt access via Login.");
         } else {
-          alert("SECURITY PROTOCOL: Verification link dispatched. Check your encrypted mail (Spam folder if missing).");
+          setSuccess("SECURITY PROTOCOL: Verification link dispatched. Check your encrypted mail.");
         }
       }
     } catch (err) {
@@ -46,8 +54,8 @@ const AuthView = () => {
     } finally {
       setLoading(false);
     }
-
   };
+
 
   return (
     <div className="auth-overlay">
@@ -66,10 +74,10 @@ const AuthView = () => {
             <span className="logo-text">PEEKOLITIX</span>
           </div>
           <h2 className="auth-title">
-            {isLogin ? 'SECURITY CLEARANCE' : 'ESTABLISH IDENTITY'}
+            {isRecovery ? 'RECOVER ACCESS' : isLogin ? 'SECURITY CLEARANCE' : 'ESTABLISH IDENTITY'}
           </h2>
           <p className="auth-subtitle">
-            {isLogin ? 'Enter your credentials to access the War Room.' : 'Join the elite strategic intelligence network.'}
+            {isRecovery ? 'Initiate protocol to reset your access code.' : isLogin ? 'Enter your credentials to access the War Room.' : 'Join the elite strategic intelligence network.'}
           </p>
         </div>
 
@@ -85,29 +93,44 @@ const AuthView = () => {
             />
           </div>
 
-          <div className="input-group">
-            <Lock className="input-icon" size={18} />
-            <input 
-              type="password" 
-              placeholder="ACCESS CODE" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
-          </div>
+          {!isRecovery && (
+            <div className="input-group">
+              <Lock className="input-icon" size={18} />
+              <input 
+                type="password" 
+                placeholder="ACCESS CODE" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+              />
+            </div>
+          )}
 
           {error && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-error">{error}</motion.p>}
+          {success && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="auth-success" style={{ color: '#00ff00', fontSize: '0.8rem', padding: '10px' }}>{success}</motion.p>}
 
           <button className="auth-submit-btn" disabled={loading}>
-            <span>{loading ? 'VERIFYING...' : isLogin ? 'INITIATE ACCESS' : 'CREATE PROTOCOL'}</span>
+            <span>{loading ? 'VERIFYING...' : isRecovery ? 'INITIATE RECOVERY' : isLogin ? 'INITIATE ACCESS' : 'CREATE PROTOCOL'}</span>
             {!loading && <ArrowRight size={18} />}
           </button>
         </form>
 
         <div className="auth-footer">
-          <button className="toggle-auth-btn" onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? "DON'T HAVE AN IDENTITY? CREATE ONE" : "ALREADY VERIFIED? LOGIN"}
-          </button>
+          {isLogin && !isRecovery && (
+            <button className="toggle-auth-btn" onClick={() => setIsRecovery(true)} style={{ marginBottom: 10, opacity: 0.7 }}>
+              FORGOT ACCESS CODE?
+            </button>
+          )}
+          
+          {isRecovery ? (
+             <button className="toggle-auth-btn" onClick={() => setIsRecovery(false)}>
+                RETURN TO LOGIN
+             </button>
+          ) : (
+            <button className="toggle-auth-btn" onClick={() => setIsLogin(!isLogin)}>
+              {isLogin ? "DON'T HAVE AN IDENTITY? CREATE ONE" : "ALREADY VERIFIED? LOGIN"}
+            </button>
+          )}
         </div>
 
         <div className="auth-security-memo">
