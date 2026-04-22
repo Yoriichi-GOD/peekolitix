@@ -22,7 +22,7 @@ const AuthView = () => {
     try {
       if (isRecovery) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: 'com.peekolitix.app://'
+          redirectTo: 'https://www.peekolitix.in'
         });
         if (error) throw error;
         setSuccess("RECOVERY PROTOCOL: Reset link dispatched to your secure mail.");
@@ -34,7 +34,7 @@ const AuthView = () => {
           email, 
           password,
           options: {
-            emailRedirectTo: 'com.peekolitix.app://'
+            emailRedirectTo: 'https://www.peekolitix.in'
           }
         });
         if (error) throw error;

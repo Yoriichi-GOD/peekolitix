@@ -116,6 +116,61 @@ const PREMIUM_MODE_BASE = {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 
+const DeepLinkHandler = () => {
+  const [showRedirect, setShowRedirect] = useState(false);
+  const [type, setType] = useState('access');
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('type=signup')) {
+      setShowRedirect(true);
+      if (hash.includes('type=recovery')) setType('recovery');
+      if (hash.includes('type=signup')) setType('verification');
+    }
+  }, []);
+
+  if (!showRedirect) return null;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="deep-link-bridge glass-panel"
+      style={{
+        position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+        zIndex: 10000, padding: '20px', width: '90%', maxWidth: '400px',
+        textAlign: 'center', background: 'rgba(17,17,17,0.95)', border: '2px solid #c41e3a',
+        boxShadow: '0 0 30px rgba(196,30,58,0.5)', color: '#fff', borderRadius: '12px'
+      }}
+    >
+      <div style={{ color: '#00ff00', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px' }}>
+        {type === 'recovery' ? 'RECOVERY PROTOCOL VERIFIED' : 'IDENTITY CONFIRMED'}
+      </div>
+      <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '20px' }}>
+        Your credentials have been successfully validated.
+      </p>
+      <a 
+        href="com.peekolitix.app://auth-callback" 
+        style={{
+          display: 'block', background: '#c41e3a', color: '#fff', padding: '15px',
+          borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none',
+          boxShadow: '0 4px 15px rgba(196,30,58,0.3)'
+        }}
+        onClick={() => setShowRedirect(false)}
+      >
+        RETURN TO MOBILE APP
+      </a>
+      <button 
+        onClick={() => setShowRedirect(false)}
+        style={{ background: 'transparent', border: 'none', color: '#666', marginTop: '15px', fontSize: '0.8rem', cursor: 'pointer' }}
+      >
+        Stay on Website
+      </button>
+    </motion.div>
+  );
+};
+
+
 function Dashboard() {
   const [currentMode, setMode] = useState('CHAT');
   const [currentPerspective, setPerspective] = useState('NEUTRAL');
@@ -441,6 +496,7 @@ function App() {
       <AnalyticsProvider>
         <AuthProvider>
           <PremiumProvider>
+            <DeepLinkHandler />
             <AuthWrapper />
           </PremiumProvider>
         </AuthProvider>
