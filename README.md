@@ -1,5 +1,8 @@
 # Peekolitix 
 
+# PEEKOLITIX: The Cyber-Oracle
+![Peekolitix Feature Graphic](/feature_graphic.png)
+
 A professional, India-focused political intelligence application. 
 Provides factual, data-driven intelligence on Indian politics, policy, and governance using the Gemini API.
 

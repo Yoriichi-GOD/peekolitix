@@ -18,7 +18,7 @@ const Header = ({ user, onToggleMobileMenu, onLogoClick }) => {
           <Menu size={20} />
         </button>
         <div className="logo" onClick={onLogoClick} style={{ cursor: onLogoClick ? 'pointer' : 'default' }}>
-          <img src="/tiger-logo.png" alt="Peekolitix Tiger" className="brand-tiger-logo" />
+          <img src="/peekolitix_logo.png" alt="Peekolitix Mask" className="brand-tiger-logo" />
           <h1>PEEKOLITIX</h1>
         </div>
 

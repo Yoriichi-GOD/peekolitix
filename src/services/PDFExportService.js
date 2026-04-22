@@ -1,7 +1,10 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
-export const exportToPDF = (reportContent, metadata) => {
+export const exportToPDF = async (reportContent, metadata) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -80,6 +83,32 @@ export const exportToPDF = (reportContent, metadata) => {
 
   // --- 5. CHROME-PROOF DOWNLOAD via native jsPDF save ---
   const filename = `Intelligence_Report_${metadata.topic.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')}.pdf`;
-  doc.save(filename);
+  
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // For Mobile: Convert to Base64 and use Filesystem/Share
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      
+      const savedFile = await Filesystem.writeFile({
+        path: filename,
+        data: pdfBase64,
+        directory: Directory.Cache
+      });
+
+      await Share.share({
+        title: 'Intelligence Briefing',
+        text: 'Sharing your strategic intelligence report.',
+        url: savedFile.uri,
+        dialogTitle: 'Share PDF'
+      });
+    } catch (err) {
+      console.error("Native PDF Export Failed:", err);
+      alert("Failed to export PDF: " + err.message);
+    }
+  } else {
+    // For Web: Use standard doc.save()
+    doc.save(filename);
+  }
 };
+
 

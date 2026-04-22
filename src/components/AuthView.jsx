@@ -21,15 +21,32 @@ const AuthView = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: 'com.peekolitix.app://'
+          }
+        });
         if (error) throw error;
-        alert("Verification link sent to your email.");
+        
+        // Supabase returns an empty user if identity already exists on some configs
+        if (data?.user?.identities?.length === 0) {
+          setError("This identity is already established. Please attempt access via Login.");
+        } else {
+          alert("SECURITY PROTOCOL: Verification link dispatched. Check your encrypted mail (Spam folder if missing).");
+        }
       }
     } catch (err) {
-      setError(err.message);
+      if (err.message.includes('already registered')) {
+        setError("IDENTITY CLASH: This email is already registered in our systems.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
+
   };
 
   return (
@@ -45,7 +62,7 @@ const AuthView = () => {
       >
         <div className="auth-header">
           <div className="auth-logo">
-            <img src="/tiger-logo.png" alt="Peekolitix Tiger" className="auth-tiger-logo" />
+            <img src="/peekolitix_logo.png" alt="Peekolitix Mask" className="auth-tiger-logo" />
             <span className="logo-text">PEEKOLITIX</span>
           </div>
           <h2 className="auth-title">
