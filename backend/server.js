@@ -1082,9 +1082,7 @@ app.post('/api/create-payment-link', generalLimiter, authenticate, async (req, r
         user_id: req.user?.id || 'unknown'
       },
       callback_url: `https://peekolitix.in`, 
-      callback_method: 'get',
-      // Force UPI QR visibility for app-less devices
-      upi_link: true
+      callback_method: 'get'
     };
 
     const paymentLink = await razorpay.paymentLink.create(options);
