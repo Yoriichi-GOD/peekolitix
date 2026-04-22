@@ -306,20 +306,34 @@ function Dashboard() {
       
       let dominanceData = { dominanceScore: 5, biasLevel: 'Low', winProbability: '50%' };
       try {
-        // High-fidelity regex to find the JSON block even with formatting variances
-        const jsonBlockMatch = markdownRes.match(/\{[\s\S]*?"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/);
-        
-        if (jsonBlockMatch) {
-          const jsonStr = jsonBlockMatch[0];
-          const parsed = JSON.parse(jsonStr);
-          if (parsed.dominanceScore !== undefined) {
-            dominanceData.dominanceScore = Math.min(Math.max(Number(parsed.dominanceScore), 1), 10);
-            dominanceData.biasLevel = parsed.biasLevel || 'Low';
-            dominanceData.winProbability = parsed.winProbability || '50%';
+        // Find ALL JSON-like blocks at the end of the text
+        const blocks = markdownRes.match(/\{[\s\S]*?\}/g);
+        if (blocks && blocks.length > 0) {
+          // Look at the VERY LAST block (most likely our footer)
+          for (let i = blocks.length - 1; i >= 0; i--) {
+            const potentialJson = blocks[i];
+            if (potentialJson.includes('dominanceScore')) {
+              try {
+                // Clean common AI hallucination characters around the JSON
+                const cleanJson = potentialJson.replace(/```json|```/gi, '').trim();
+                const parsed = JSON.parse(cleanJson);
+                
+                if (parsed.dominanceScore !== undefined) {
+                  dominanceData.dominanceScore = Math.min(Math.max(Number(parsed.dominanceScore), 1), 10);
+                }
+                if (parsed.biasLevel) dominanceData.biasLevel = parsed.biasLevel;
+                if (parsed.winProbability) dominanceData.winProbability = String(parsed.winProbability);
+                
+                // Found and successfully parsed our data block
+                break;
+              } catch (e) {
+                console.warn("Retrying parser on previous block...", e);
+              }
+            }
           }
         }
       } catch (e) { 
-        console.warn("Soft-failure on dominance parsing; using defaults.", e); 
+        console.warn("Critical failure on data sync; using defaults.", e); 
       }
 
       // Ruthless cleaning: Remove the internal data block from the user-facing report
