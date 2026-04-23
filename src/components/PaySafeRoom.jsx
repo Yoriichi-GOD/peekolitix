@@ -8,6 +8,8 @@ const PaySafeRoom = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const orderId = searchParams.get('oid');
     const plan = searchParams.get('plan') || 'Premium';
+    const userName = searchParams.get('u') || 'Analyst';
+    const userEmail = searchParams.get('e') || '';
 
     useEffect(() => {
         if (!orderId) {
@@ -34,6 +36,10 @@ const PaySafeRoom = () => {
             order_id: orderId,
             name: 'Peekolitix',
             description: `Sovereign Intelligence: ${plan}`,
+            prefill: {
+                name: decodeURIComponent(userName),
+                email: decodeURIComponent(userEmail)
+            },
             handler: function (response) {
                 setStatus('paid');
             },
