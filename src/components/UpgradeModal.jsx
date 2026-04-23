@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import { useAnalytics } from '../context/AnalyticsContext';
 import { Checkout } from 'capacitor-razorpay';
+import { Capacitor } from '@capacitor/core';
 import './UpgradeModal.css';
 
 const PLAN_ICONS = {
@@ -52,7 +53,9 @@ const UpgradeModal = () => {
   const { trackEvent } = useAnalytics();
 
   const handleUpgrade = async (planKey) => {
-    if (!selectingMethod) {
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative && !selectingMethod) {
       setSelectingMethod(planKey);
       return;
     }
@@ -63,7 +66,6 @@ const UpgradeModal = () => {
     trackEvent('upgrade_initiated', { plan: planKey, method: 'native' });
 
     try {
-      // (Keep existing native logic...)
       let token = 'dev-token';
       if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
@@ -81,51 +83,84 @@ const UpgradeModal = () => {
       const orderData = await response.json();
       if (!orderData.success) throw new Error("Order creation failed");
 
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: orderData.order.amount,
-        currency: 'INR',
-        name: 'Peekolitix',
-        description: `Upgrade to ${config.label} Tier`,
-        order_id: orderData.order.id,
-        prefill: {
-          name: user?.email?.split('@')[0] || 'Analyst',
-          email: user?.email || 'analyst@peekolitix.com',
-        },
-        theme: { color: config.color }
-      };
-
-      try {
-        const result = await Checkout.open(options);
-        const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+      if (isNative) {
+        // NATIVE FLOW (App)
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: orderData.order.amount,
+          currency: 'INR',
+          name: 'Peekolitix',
+          description: `Upgrade to ${config.label} Tier`,
+          order_id: orderData.order.id,
+          prefill: {
+            name: user?.email?.split('@')[0] || 'Analyst',
+            email: user?.email || 'analyst@peekolitix.com',
           },
-          body: JSON.stringify({
-            razorpay_order_id: result.razorpay_order_id,
-            razorpay_payment_id: result.razorpay_payment_id,
-            razorpay_signature: result.razorpay_signature,
-            user_id: user?.id,
-            plan_key: planKey
-          })
-        });
+          theme: { color: config.color }
+        };
 
-        const verifyData = await verifyRes.json();
-        if (verifyData.success) {
-          trackEvent('upgrade_successful', { plan: planKey });
-          upgradeTo(planKey);
-          setSelectingMethod(null);
-        } else {
-          alert('Verification failed.');
-        }
-      } catch (e) {
-        console.error("Native Cancelled/Failed", e);
+        try {
+          const result = await Checkout.open(options);
+          const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              razorpay_order_id: result.razorpay_order_id,
+              razorpay_payment_id: result.razorpay_payment_id,
+              razorpay_signature: result.razorpay_signature,
+              user_id: user?.id,
+              plan_key: planKey
+            })
+          });
+
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            upgradeTo(planKey);
+            setSelectingMethod(null);
+          }
+        } catch (e) { console.error("Native Checkout Failure", e); }
+      } else {
+        // WEB FLOW (Browser)
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: orderData.order.amount,
+          currency: 'INR',
+          name: 'Peekolitix',
+          description: `Upgrade to ${config.label} Tier`,
+          order_id: orderData.order.id,
+          handler: async function (response) {
+            const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                user_id: user?.id,
+                plan_key: planKey
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) upgradeTo(planKey);
+          },
+          prefill: {
+            name: user?.email?.split('@')[0] || 'Analyst',
+            email: user?.email || 'analyst@peekolitix.com',
+          },
+          theme: { color: config.color }
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       }
     } catch (err) {
       console.error(err);
-      alert('Internal Error.');
+      alert('Payment Error.');
     }
   };
 
@@ -163,6 +198,7 @@ const UpgradeModal = () => {
   };
 
   const plans = [TIERS.STUDENT, TIERS.JOURNALIST, TIERS.CONSULTANT];
+  const isNative = Capacitor.isNativePlatform();
 
   return (
     <AnimatePresence>
@@ -226,7 +262,7 @@ const UpgradeModal = () => {
                       ))}
                     </ul>
 
-                    {selectingMethod === planKey ? (
+                    {(isNative && selectingMethod === planKey) ? (
                       <div className="method-selector">
                         <button className="method-btn native" onClick={() => handleUpgrade(planKey)}>
                           <Zap size={14} /> PAY VIA UPI (APP)
