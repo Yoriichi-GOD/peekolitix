@@ -10,7 +10,7 @@ import supabase from './src/config/supabase.js';
 
 const app = express();
 // Mandatory for Render/Vercel/Heroku proxies to allow rate-limiting
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -19,12 +19,12 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // CORS FIREWALL — only allow known frontend origins
 // ========================================================================
 const allowedOrigins = [
-  'https://peekolitix.vercel.app', 
-  'https://peekolitix.in', 
+  'https://peekolitix.vercel.app',
+  'https://peekolitix.in',
   'https://www.peekolitix.in',
-  'http://localhost:5173', 
-  'http://localhost:5174', 
-  'http://127.0.0.1:5173', 
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
   'http://localhost', // Some Capacitor/Emulator environments use this
   'https://localhost',
@@ -92,11 +92,11 @@ const authenticate = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
       return res.status(401).json({ error: 'Unauthorized: Invalid token' });
     }
-    
+
     req.user = user;
     next();
   } catch (err) {
@@ -123,7 +123,7 @@ const checkQueryLimit = async (req, res, next) => {
         .select('tier')
         .eq('id', req.user.id)
         .maybeSingle();
-      
+
       if (profile && profile.tier) {
         userTier = profile.tier;
       } else {
@@ -133,7 +133,7 @@ const checkQueryLimit = async (req, res, next) => {
       // 2. Persistent Query Tracking — Count briefings from DB for today (UTC)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const { count, error: countError } = await supabase
         .from('debates') // Counting history instead of relying on memory
         .select('*', { count: 'exact', head: true })
@@ -579,6 +579,11 @@ RBI Repo Rate: Check latest — was 6.5% through most of 2025
 ### PERSPECTIVE DIRECTIVE ###
 ${perspectivePrompt}
 
+### METRICS MANDATE ###
+1. ABSOLUTE REQUIREMENT: You MUST start EVERY response with a metrics tag in this EXACT format: [METRICS:Score=X,Win=Y%] where X is the dominance score (1-10) and Y is the win probability percentage.
+2. The metrics tag MUST be the very first thing in your output. No preamble, no greetings.
+3. Example: [METRICS:Score=8,Win=85%] Followed by your analysis.
+
 ### MODE: ${mode} ###
 ${modePrompt}${antiBypassDirective}`;
 
@@ -636,7 +641,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
 
         clearTimeout(timeout);
         const data = await response.json();
-        
+
         if (response.ok && data.choices && data.choices[0]) {
           responseText = data.choices[0].message.content;
           console.log("✅ OpenRouter Primary succeeded.");
@@ -652,7 +657,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
     while (attempts < maxAttempts && !responseText) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000); 
+        const timeout = setTimeout(() => controller.abort(), 15000);
 
         console.log(`📡 NVIDIA Engine: Attempting fallback ${attempts + 1}...`);
         const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
@@ -663,7 +668,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
           },
           signal: controller.signal,
           body: JSON.stringify({
-            model: 'meta/llama-3.1-8b-instruct', 
+            model: 'meta/llama-3.1-8b-instruct',
             messages: [
               { role: 'system', content: systemPrompt },
               ...chatHistory,
@@ -671,25 +676,25 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
             ],
             temperature: 0.1,
             top_p: 1.0,
-            max_tokens: 800, 
+            max_tokens: 800,
           }),
         });
 
         clearTimeout(timeout);
         const data = await response.json();
-        
+
         if (response.ok) {
           responseText = data.choices[0].message.content;
           console.log("✅ NVIDIA Fallback succeeded.");
-          break; 
+          break;
         }
-        
+
         console.warn(`NVIDIA Attempt ${attempts + 1} failed: ${data.error?.message || response.statusText}`);
       } catch (err) {
         console.warn(`NVIDIA Attempt ${attempts + 1} Error: ${err.message}`);
       }
       attempts++;
-      if (!responseText) await new Promise(r => setTimeout(r, 800)); 
+      if (!responseText) await new Promise(r => setTimeout(r, 800));
     }
 
     // PHASE 3: Gemini Flash Fallback (Final Safety Net)
@@ -734,7 +739,7 @@ STRICT: Avoid vague language. Use Indian official metrics and cite sources.${dis
 
         clearTimeout(timeout);
         const data = await response.json();
-        
+
         if (response.ok && data.candidates && data.candidates.length > 0) {
           if (data.candidates[0].content) {
             responseText = data.candidates[0].content.parts[0].text;
@@ -813,7 +818,7 @@ STRICT RULES:
             signal: controller.signal,
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: sysPrompt }] },
-              contents: [ { role: 'user', parts: [{ text: trimmedText }] } ],
+              contents: [{ role: 'user', parts: [{ text: trimmedText }] }],
               safetySettings: [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -826,8 +831,8 @@ STRICT RULES:
 
           clearTimeout(timeout);
           let data;
-          try { data = await response.json(); } catch(e) { data = { error: { message: 'Invalid JSON response' } }; }
-          
+          try { data = await response.json(); } catch (e) { data = { error: { message: 'Invalid JSON response' } }; }
+
           if (response.ok && data.candidates && data.candidates.length > 0) {
             translatedContent = data.candidates[0].content.parts[0].text;
             break;
@@ -861,14 +866,14 @@ STRICT RULES:
               { role: 'user', content: trimmedText }
             ],
             temperature: 0.1,
-            max_tokens: 3000, 
+            max_tokens: 3000,
           }),
         });
 
         clearTimeout(timeout);
         let data;
-        try { data = await response.json(); } catch(e) { data = { error: { message: `NVIDIA invalid JSON (likely 503 Gateway Error)` } }; }
-        
+        try { data = await response.json(); } catch (e) { data = { error: { message: `NVIDIA invalid JSON (likely 503 Gateway Error)` } }; }
+
         if (response.ok && data.choices) {
           translatedContent = data.choices[0].message.content;
         } else {
@@ -909,12 +914,12 @@ app.post('/api/save-briefing', generalLimiter, authenticate, async (req, res) =>
     }
 
     // Defensive check: ensure response object is well-formed
-    const responseBody = { 
-      mode: mode || 'DEBATE', 
-      report: report || '', 
-      dominanceScore: dominanceScore ?? 5, 
-      biasLevel: biasLevel || 'Low', 
-      winProbability: winProbability || '50%' 
+    const responseBody = {
+      mode: mode || 'DEBATE',
+      report: report || '',
+      dominanceScore: dominanceScore ?? 5,
+      biasLevel: biasLevel || 'Low',
+      winProbability: winProbability || '50%'
     };
 
     const { error } = await supabase
@@ -930,11 +935,11 @@ app.post('/api/save-briefing', generalLimiter, authenticate, async (req, res) =>
       console.error('Supabase Insert Error:', error.message);
       throw error;
     }
-    
+
     res.json({ success: true });
-  } catch (err) { 
+  } catch (err) {
     console.error(`Save Briefing failed: ${err.message}`);
-    res.status(500).json({ error: err.message }); 
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -950,7 +955,7 @@ app.post('/api/user-status', generalLimiter, authenticate, async (req, res) => {
         .select('tier')
         .eq('id', req.user.id)
         .maybeSingle();
-      
+
       if (profile) userTier = profile.tier;
 
       // 2. Get Today's Count
@@ -996,22 +1001,22 @@ app.post('/api/history', generalLimiter, authenticate, async (req, res) => {
     const history = (data || []).map(item => {
       const resp = item.response || {};
       return {
-        id: item.id, 
-        query: item.topic || 'Untitled', 
-        perspective: item.side || 'NEUTRAL', 
+        id: item.id,
+        query: item.topic || 'Untitled',
+        perspective: item.side || 'NEUTRAL',
         mode: resp.mode || 'DEBATE',
-        report: resp.report || '', 
+        report: resp.report || '',
         dominanceScore: resp.dominanceScore ?? 5,
-        biasLevel: resp.biasLevel || 'Low', 
+        biasLevel: resp.biasLevel || 'Low',
         winProbability: resp.winProbability || '50%',
         timestamp: item.created_at
       };
     });
-    
+
     res.json({ success: true, history });
-  } catch (err) { 
+  } catch (err) {
     console.error(`History Fetch failed: ${err.message}`);
-    res.status(500).json({ error: err.message }); 
+    res.status(500).json({ error: err.message });
   }
 });
 

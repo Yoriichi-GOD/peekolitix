@@ -192,3 +192,53 @@
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
 }
+
+.method-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+.method-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.method-btn.native {
+  background: var(--plan-color);
+  color: #000;
+}
+
+.method-btn.web {
+  background: rgba(255,255,255,0.05);
+  color: var(--plan-color);
+  border-color: var(--plan-color);
+}
+
+.method-cancel {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -47,23 +47,29 @@ const PLAN_FEATURES = {
 
 const UpgradeModal = () => {
   const { showUpgradeModal, closeUpgradeModal, upgradeTo, TIER_CONFIG, TIERS, targetTier, tier } = usePremium();
+  const [selectingMethod, setSelectingMethod] = React.useState(null); // planKey when selecting
   const { user } = useAuth();
   const { trackEvent } = useAnalytics();
 
   const handleUpgrade = async (planKey) => {
+    if (!selectingMethod) {
+      setSelectingMethod(planKey);
+      return;
+    }
+
     const config = TIER_CONFIG[planKey];
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
 
-    trackEvent('upgrade_initiated', { plan: planKey });
+    trackEvent('upgrade_initiated', { plan: planKey, method: 'native' });
 
     try {
+      // (Keep existing native logic...)
       let token = 'dev-token';
       if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
         token = session?.access_token || '';
       }
 
-      // 1. Contact Backend: Create Order (server validates price)
       const response = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: 'POST',
         headers: { 
@@ -73,10 +79,8 @@ const UpgradeModal = () => {
         body: JSON.stringify({ plan: planKey, receipt: `rcpt_${planKey}_${Date.now()}` })
       });
       const orderData = await response.json();
-
       if (!orderData.success) throw new Error("Order creation failed");
 
-      // 3. Spawns Native Razorpay Checkout
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.order.amount,
@@ -93,8 +97,6 @@ const UpgradeModal = () => {
 
       try {
         const result = await Checkout.open(options);
-        
-        // 4. Contact Backend: Verify Payment Signature
         const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
           method: 'POST',
           headers: { 
@@ -114,20 +116,49 @@ const UpgradeModal = () => {
         if (verifyData.success) {
           trackEvent('upgrade_successful', { plan: planKey });
           upgradeTo(planKey);
+          setSelectingMethod(null);
         } else {
-          trackEvent('upgrade_failed', { plan: planKey, reason: 'verification_failed' });
-          alert('Payment secured but verification failed.');
+          alert('Verification failed.');
         }
-      } catch (checkoutError) {
-        // checkoutError will contain the detail of failed payment or cancellation
-        trackEvent('upgrade_failed', { plan: planKey, reason: checkoutError.reason || 'Payment cancelled' });
-        console.error("Native Checkout Failure:", checkoutError);
+      } catch (e) {
+        console.error("Native Cancelled/Failed", e);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Internal Error.');
+    }
+  };
+
+  const handleWebUpgrade = async (planKey) => {
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001';
+    trackEvent('upgrade_initiated', { plan: planKey, method: 'web' });
+
+    try {
+      let token = 'dev-token';
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        token = session?.access_token || '';
       }
 
+      const response = await fetch(`${BACKEND_URL}/api/create-order`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ plan: planKey, receipt: `rcpt_web_${planKey}_${Date.now()}` })
+      });
+      const orderData = await response.json();
+      
+      if (orderData.success) {
+        // Zero-Login Redirect to Website Checkout
+        const paymentUrl = `https://peekolitix.in/pay-safe?oid=${orderData.order.id}&plan=${planKey}`;
+        window.open(paymentUrl, '_blank');
+        alert("Redirecting to Secure Web Checkout for QR/Other payments. Once paid, return to the app to see your status.");
+        setSelectingMethod(null);
+      }
     } catch (err) {
-      console.error("Payment Error:", err);
-      trackEvent('upgrade_failed', { plan: planKey, reason: err.message });
-      alert('Payment could not be processed. Please try again or contact support.');
+      console.error("Web Bridge Error:", err);
     }
   };
 
@@ -195,16 +226,28 @@ const UpgradeModal = () => {
                       ))}
                     </ul>
 
-                    <button
-                      className="plan-cta"
-                      style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
-                      onClick={() => handleUpgrade(planKey)}
-                      disabled={isActive}
-                    >
-                      {isActive ? '✓ CURRENT PLAN' : (
-                        <><Zap size={14} /> ACTIVATE {config.label.toUpperCase()}</>
-                      )}
-                    </button>
+                    {selectingMethod === planKey ? (
+                      <div className="method-selector">
+                        <button className="method-btn native" onClick={() => handleUpgrade(planKey)}>
+                          <Zap size={14} /> PAY VIA UPI (APP)
+                        </button>
+                        <button className="method-btn web" onClick={() => handleWebUpgrade(planKey)}>
+                          <Star size={14} /> PAY VIA QR (WEB)
+                        </button>
+                        <button className="method-cancel" onClick={() => setSelectingMethod(null)}>CANCEL</button>
+                      </div>
+                    ) : (
+                      <button
+                        className="plan-cta"
+                        style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
+                        onClick={() => handleUpgrade(planKey)}
+                        disabled={isActive || (selectingMethod && selectingMethod !== planKey)}
+                      >
+                        {isActive ? '✓ CURRENT PLAN' : (
+                          <><Zap size={14} /> ACTIVATE {config.label.toUpperCase()}</>
+                        )}
+                      </button>
+                    )}
                   </motion.div>
                 );
               })}

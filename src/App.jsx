@@ -306,38 +306,27 @@ function Dashboard() {
       
       let dominanceData = { dominanceScore: 5, biasLevel: 'Low', winProbability: '50%' };
       try {
-        // Find ALL JSON-like blocks at the end of the text
-        const blocks = markdownRes.match(/\{[\s\S]*?\}/g);
-        if (blocks && blocks.length > 0) {
-          // Look at the VERY LAST block (most likely our footer)
-          for (let i = blocks.length - 1; i >= 0; i--) {
-            const potentialJson = blocks[i];
-            if (potentialJson.includes('dominanceScore')) {
-              try {
-                // Clean common AI hallucination characters around the JSON
-                const cleanJson = potentialJson.replace(/```json|```/gi, '').trim();
-                const parsed = JSON.parse(cleanJson);
-                
-                if (parsed.dominanceScore !== undefined) {
-                  dominanceData.dominanceScore = Math.min(Math.max(Number(parsed.dominanceScore), 1), 10);
-                }
-                if (parsed.biasLevel) dominanceData.biasLevel = parsed.biasLevel;
-                if (parsed.winProbability) dominanceData.winProbability = String(parsed.winProbability);
-                
-                // Found and successfully parsed our data block
-                break;
-              } catch (e) {
-                console.warn("Retrying parser on previous block...", e);
-              }
-            }
+        // High-Fidelity Front-Load Parser: Look for the [METRICS] tag at the very start
+        const metricsMatch = markdownRes.match(/^\[METRICS:Score=(\d+),Win=([^\]]+)\]/i);
+        if (metricsMatch) {
+          dominanceData.dominanceScore = Math.min(Math.max(Number(metricsMatch[1]), 1), 10);
+          dominanceData.winProbability = metricsMatch[2].trim();
+        } else {
+          // Fallback to searching the whole text for the signature if not at the start
+          const looseMatch = markdownRes.match(/\[METRICS:Score=(\d+),Win=([^\]]+)\]/i);
+          if (looseMatch) {
+            dominanceData.dominanceScore = Math.min(Math.max(Number(looseMatch[1]), 1), 10);
+            dominanceData.winProbability = looseMatch[2].trim();
           }
         }
       } catch (e) { 
-        console.warn("Critical failure on data sync; using defaults.", e); 
+        console.warn("Front-load parse failed; using defaults.", e); 
       }
 
-      // Ruthless cleaning: Remove the internal data block from the user-facing report
+      // Cleaning: Slice off the [METRICS] tag from the user report and other garbage
       const cleanMarkdown = markdownRes
+        .replace(/^\[METRICS:[^\]]+\]\s*/i, '') // Remove the front-loaded metrics
+        .replace(/\[METRICS:[^\]]+\]/gi, '')    // Remove any accidental duplicates
         .replace(/```json[\s\S]*?```/gi, '')
         .replace(/\{[\s\S]*?"dominanceScore"[\s\S]*?"winProbability"[\s\S]*?\}/gi, '')
         .replace(/JSON[\s_]*BLOCK:?/gi, '')
@@ -346,8 +335,6 @@ function Dashboard() {
         .replace(/### INTERNAL METRICS ###/gi, '')
         .replace(/\[DOMINANCE DATA SCANNED\]/gi, '')
         .replace(/SILENT INSTRUCTION[\s\S]*$/gi, '')
-        .replace(/\n\s*Note:\s*The (above|dominance|JSON|internal|hidden)[\s\S]*?$/gi, '')
-        .replace(/PREMIUM LAYER:?/gi, '')
         .replace(/CONSULTANT_PREMIUM:?/gi, '')
         .trim();
 
@@ -389,7 +376,7 @@ function Dashboard() {
             perspective: currentPerspective,
             report: cleanMarkdown,
             ...dominanceData
-          })
+          }),
         }).catch(err => console.error("Secure Supabase sync failed", err));
       };
       saveBriefing();
