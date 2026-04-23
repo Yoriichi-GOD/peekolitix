@@ -20,6 +20,7 @@ import AuthView from './components/AuthView';
 import UpgradeModal from './components/UpgradeModal';
 import DevPanel from './components/DevPanel';
 import ResetPasswordRoom from './components/ResetPasswordRoom';
+import PaySafeRoom from './components/PaySafeRoom';
 
 // =====================================================================
 // TranslatedReport — wraps any report view with Hindi translation layer
@@ -501,6 +502,10 @@ const AuthWrapper = () => {
       <span>SECURE BOOT INITIATED...</span>
     </div>
   );
+
+  // LEVEL 0.5 GATE: Secure payment tunnel for app redirects
+  const isPaySafe = window.location.pathname.includes('/pay-safe');
+  if (isPaySafe) return <PaySafeRoom />;
 
   // LEVEL 0 GATE: If the Security Vault is locked (Token detected), show Reset Room ONLY.
   if (isVaultLocked) {
