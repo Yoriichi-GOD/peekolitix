@@ -116,54 +116,70 @@ STRICT: Do NOT include any 'Note' or text-based explanation about these internal
 `;
 
 export const generateIntelligenceReport = async (query, mode, perspective, history = [], premiumModeKey = null) => {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/ai/analyze-v2`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${await getToken()}`
-      },
-      body: JSON.stringify({
-        query,
-        mode,
-        perspective,
-        history,
-        premiumModeKey
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.error || "NVIDIA Intelligence Engine Error");
-    }
-
-    return data.content;
-  } catch (error) {
-    console.error("AI Generation Error:", error);
-    throw error;
-  }
-};
-
-export const synthesizeHistory = async (history) => {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/ai/analyze-v2`, {
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/ai/analyze-v2`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${await getToken()}`
         },
         body: JSON.stringify({
-          query: `Synthesize the following ${history.length} Indian Political Intelligence briefings into a single High-Coverage Strategy Dossier. Focus exclusively on the trends and metrics from these specific reports.`,
-          mode: 'QUICK',
-          perspective: 'NEUTRAL',
-          history: history
+          query,
+          mode,
+          perspective,
+          history,
+          premiumModeKey
         }),
       });
-  
+
       const data = await response.json();
+      if (!response.ok) {
+          throw new Error(data.error || "Intelligence Engine Error");
+      }
+
       return data.content;
-  } catch (error) {
-    console.error("Synthesis Error:", error);
-    throw error;
+    } catch (error) {
+      if (retries === 0) {
+        console.error("AI Generation Error after retries:", error);
+        throw error;
+      }
+      console.warn(`Backend sleeping or timeout. Retries left: ${retries}. Waiting 4s...`);
+      await new Promise(r => setTimeout(r, 4000));
+      retries--;
+    }
+  }
+};
+
+export const synthesizeHistory = async (history) => {
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/ai/analyze-v2`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${await getToken()}`
+          },
+          body: JSON.stringify({
+            query: `Synthesize the following ${history.length} Indian Political Intelligence briefings into a single High-Coverage Strategy Dossier. Focus exclusively on the trends and metrics from these specific reports.`,
+            mode: 'QUICK',
+            perspective: 'NEUTRAL',
+            history: history
+          }),
+        });
+    
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Synthesis Engine Error");
+        return data.content;
+    } catch (error) {
+      if (retries === 0) {
+        console.error("Synthesis Error after retries:", error);
+        throw error;
+      }
+      await new Promise(r => setTimeout(r, 4000));
+      retries--;
+    }
   }
 };

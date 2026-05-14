@@ -20,6 +20,8 @@ import AuthView from './components/AuthView';
 import UpgradeModal from './components/UpgradeModal';
 import DevPanel from './components/DevPanel';
 import ResetPasswordRoom from './components/ResetPasswordRoom';
+import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
+import { Capacitor } from '@capacitor/core';
 
 // =====================================================================
 // TranslatedReport — wraps any report view with Hindi translation layer
@@ -199,6 +201,50 @@ function Dashboard() {
 
   const [debugTaps, setDebugTaps] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
+
+  // AdMob Setup & UMP Consent
+  useEffect(() => {
+    let bannerActive = false;
+    const setupAds = async () => {
+      try {
+        await AdMob.initialize({ initializeForTesting: true });
+        
+        // Request Consent
+        const consentInfo = await AdMob.requestConsentInfo();
+        if (consentInfo.isConsentFormAvailable && consentInfo.status === 'REQUIRED') {
+          await AdMob.showConsentForm();
+        }
+
+        // Display Banner for FREE users
+        if (tier === TIERS.FREE) {
+          await AdMob.showBanner({
+            adId: 'ca-app-pub-3940256099942544/6300978111', // Google Test Banner ID
+            adSize: BannerAdSize.ADAPTIVE_BANNER,
+            position: BannerAdPosition.BOTTOM_CENTER,
+            margin: 0,
+            isTesting: true
+          });
+          bannerActive = true;
+        } else {
+          // If they upgrade, hide the banner
+          await AdMob.hideBanner();
+        }
+      } catch (err) {
+        console.warn('AdMob Error:', err);
+      }
+    };
+    
+    // Only run on mobile (Capacitor)
+    if (Capacitor.isNativePlatform()) {
+      setupAds();
+    }
+
+    return () => {
+      if (bannerActive && Capacitor.isNativePlatform()) {
+        AdMob.hideBanner().catch(() => {});
+      }
+    };
+  }, [tier]);
 
   const handleLogoClick = () => {
     const newTaps = debugTaps + 1;
@@ -492,6 +538,83 @@ function Dashboard() {
   );
 }
 
+const ServerWarmupGate = ({ children }) => {
+  const [isAwake, setIsAwake] = useState(false);
+  const [timer, setTimer] = useState(50);
+  const [isWaking, setIsWaking] = useState(false);
+
+  useEffect(() => {
+    let intervalId;
+    
+    const checkServer = async () => {
+      try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(`${BACKEND_URL}/api/ping`, { signal: controller.signal });
+        clearTimeout(id);
+        if (res.ok) {
+          setIsAwake(true);
+          return true;
+        }
+      } catch (e) {
+        return false;
+      }
+      return false;
+    };
+
+    const bootSequence = async () => {
+      const instant = await checkServer();
+      if (instant) return;
+      
+      setIsWaking(true);
+      
+      intervalId = setInterval(async () => {
+        setTimer(t => {
+          if (t <= 1) return 1;
+          return t - 1;
+        });
+        
+        const awake = await checkServer();
+        if (awake) {
+          clearInterval(intervalId);
+        }
+      }, 3000);
+    };
+
+    bootSequence();
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  if (isAwake) return children;
+
+  if (isWaking) {
+    return (
+      <div className="app-loading-screen" style={{ flexDirection: 'column', gap: '20px' }}>
+        <div className="loader-orbit" style={{ borderColor: '#c77dff', borderTopColor: 'transparent' }}></div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#c77dff', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px' }}>
+            ENCRYPTED SERVER WAKING UP
+          </div>
+          <div style={{ color: '#adb5bd', fontSize: '0.9rem' }}>
+            Free tier cold start detected. Please hold.
+          </div>
+          <div style={{ fontSize: '2rem', color: '#fff', marginTop: '15px', fontFamily: 'monospace' }}>
+            00:{timer < 10 ? `0${timer}` : timer}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-loading-screen">
+      <div className="loader-orbit"></div>
+      <span style={{ marginTop: '15px', display: 'block', color: '#c77dff', letterSpacing: '2px', fontWeight: 'bold' }}>ESTABLISHING CONNECTION...</span>
+    </div>
+  );
+};
+
 const AuthWrapper = () => {
   const { user, loading, isVaultLocked } = useAuth();
 
@@ -508,7 +631,11 @@ const AuthWrapper = () => {
     return <ResetPasswordRoom />;
   }
 
-  return user ? <Dashboard /> : <AuthView />;
+  return user ? (
+    <ServerWarmupGate>
+      <Dashboard />
+    </ServerWarmupGate>
+  ) : <AuthView />;
 };
 
 function App() {

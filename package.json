@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor/android": "^8.3.0",
     "@capacitor/browser": "^8.0.3",
     "@capacitor/cli": "^8.3.0",

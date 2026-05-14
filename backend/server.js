@@ -53,7 +53,12 @@ app.get('/api/ping', (req, res) => {
 });
 
 app.use(helmet());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ 
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 // ========================================================================
 // RATE LIMITING — 10 requests per minute per IP on the AI endpoint
@@ -157,6 +162,14 @@ const checkQueryLimit = async (req, res, next) => {
   if (userTier === 'FREE') {
     if (queriesToday >= 15) {
       return res.status(429).json({ error: 'Daily query limit reached for FREE tier.' });
+    }
+  } else if (userTier === 'STUDENT' || userTier === 'JOURNALIST') {
+    if (queriesToday >= 150) {
+      return res.status(429).json({ error: 'Fair Use Policy limit (150) reached for your tier.' });
+    }
+  } else if (userTier === 'CONSULTANT' || userTier === 'WAR ROOM') {
+    if (queriesToday >= 500) {
+      return res.status(429).json({ error: 'Fair Use Policy limit (500) reached for your tier.' });
     }
   }
 
@@ -537,6 +550,10 @@ YOU ARE NOT A PROPAGANDA TOOL. You exist to present TRUTH backed by DATA.
 
 REMEMBER: Peekolitix is NOT here to tell people what to think. It is here to give them the FACTS so they can think for themselves. If the truth is uncomfortable for any party, that is not your problem. Your job is accuracy, not comfort.
 
+### CONTRADICTION & INNER SOURCE BINDING ###
+1. Data Discrepancy Flagging: If institutional data sources conflict with each other on the queried topic (e.g., State Government claims X, but Central NITI Aayog/RBI data says Y), you MUST halt and generate a bold **[DATA CONTRADICTION DETECTED]** block at the top of your report, explicitly naming the two conflicting sources and the exact gap.
+2. History Binding: The user provides their recent briefing history. You MUST cross-reference their current query against this history to build a compounding "Inner Source" dossier. If the new query contradicts a trend established in the history, note the shift.
+
 ### HONESTY & NO-HALLUCINATION MANDATE ###
 This is your MOST IMPORTANT operational rule. You must NEVER fabricate, invent, or hallucinate any data.
 1. When citing ANY statistic, you MUST name the SOURCE and YEAR (e.g., "RBI Bulletin, March 2025").
@@ -903,6 +920,12 @@ STRICT RULES:
 // ========================================================================
 app.post('/api/save-briefing', generalLimiter, authenticate, async (req, res) => {
   try {
+    // 50kb strict payload shield to prevent DB exhaustion
+    const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+    if (contentLength > 51200) { // 50KB
+      return res.status(413).json({ error: 'Payload Too Large. Maximum briefing size is 50kb.' });
+    }
+
     const { query, mode, perspective, report, dominanceScore, biasLevel, winProbability } = req.body;
     const user_id = req.user.id;
 
@@ -1114,6 +1137,61 @@ app.post('/api/verify-payment', generalLimiter, authenticate, async (req, res) =
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ========================================================================
+// RAZORPAY WEBHOOK — Asynchronous server-to-server payment verification
+// ========================================================================
+app.post('/api/razorpay-webhook', generalLimiter, async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) return res.status(503).json({ error: 'Webhook secret not configured.' });
+
+    const signature = req.headers['x-razorpay-signature'];
+    
+    // Verify using the raw body captured by express.json
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(req.rawBody)
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      console.warn("Invalid Razorpay webhook signature detected.");
+      return res.status(400).json({ error: 'Invalid webhook signature' });
+    }
+
+    const payload = req.body;
+    const event = payload.event;
+
+    // Handle successful payment events
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = payload.payload.payment.entity;
+      const order_id = paymentEntity.order_id;
+
+      if (razorpay && supabase) {
+        // Fetch order to safely get the correct notes (plan and user_id)
+        const order = await razorpay.orders.fetch(order_id);
+        const plan_key = order?.notes?.plan;
+        const user_id = order?.notes?.user_id;
+
+        if (user_id && user_id !== 'unknown' && plan_key && PLAN_PRICES[plan_key]) {
+          console.log(`WEBHOOK: Upgrading user ${user_id} to ${plan_key}`);
+          const { error } = await supabase
+            .from('profiles')
+            .update({ tier: plan_key })
+            .eq('id', user_id);
+
+          if (error) console.error("Webhook Profile Upgrade Error:", error.message);
+        }
+      }
+    }
+
+    // Always return 200 OK to acknowledge receipt
+    res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error(`Webhook Processing Error: ${err.message}`);
+    res.status(200).json({ status: 'error_handled' });
   }
 });
 
