@@ -115,7 +115,7 @@ const AuthView = () => {
               <Lock className="input-icon" size={18} />
               <input 
                 type="password" 
-                placeholder="PASSWORD" 
+                placeholder={isLogin ? "PASSWORD" : "SET PASSWORD"} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
@@ -124,17 +124,22 @@ const AuthView = () => {
           )}
 
           {!isLogin && !isRecovery && (
-            <div className="consent-group" style={{ display: 'flex', alignItems: 'flex-start', marginTop: '15px', marginBottom: '15px', gap: '10px' }}>
-              <input 
-                type="checkbox" 
-                id="consent-check"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                style={{ marginTop: '4px', cursor: 'pointer', accentColor: '#c77dff' }}
-              />
-              <label htmlFor="consent-check" style={{ fontSize: '0.75rem', color: '#adb5bd', lineHeight: '1.4', textAlign: 'left' }}>
-                I acknowledge that Peekolitix is an AI intelligence tool. I agree to the <a href="https://peekolitix.in/terms" target="_blank" rel="noreferrer" style={{ color: '#c77dff', textDecoration: 'none', fontWeight: 'bold' }}>Terms of Service</a> and understand that outputs must be verified.
-              </label>
+            <div className="consent-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '15px', marginBottom: '15px', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <input 
+                  type="checkbox" 
+                  id="consent-check"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  style={{ marginTop: '4px', cursor: 'pointer', accentColor: '#c77dff' }}
+                />
+                <label htmlFor="consent-check" style={{ fontSize: '0.75rem', color: '#adb5bd', lineHeight: '1.4', textAlign: 'left' }}>
+                  I acknowledge that Peekolitix is an AI intelligence tool. I agree to the <a href="https://peekolitix.in/terms" target="_blank" rel="noreferrer" style={{ color: '#c77dff', textDecoration: 'none', fontWeight: 'bold' }}>Terms of Service</a> and understand that outputs must be verified.
+                </label>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#c77dff', margin: '0', textAlign: 'left', fontStyle: 'italic', paddingLeft: '23px' }}>
+                *Check your inbox and spam folder for the confirmation email.
+              </p>
             </div>
           )}
 
