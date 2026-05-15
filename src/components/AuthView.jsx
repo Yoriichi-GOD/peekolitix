@@ -103,7 +103,7 @@ const AuthView = () => {
             <Mail className="input-icon" size={18} />
             <input 
               type="email" 
-              placeholder="STRATEGIC EMAIL" 
+              placeholder="EMAIL ADDRESS" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
@@ -115,7 +115,7 @@ const AuthView = () => {
               <Lock className="input-icon" size={18} />
               <input 
                 type="password" 
-                placeholder="ACCESS CODE" 
+                placeholder="PASSWORD" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
@@ -145,8 +145,8 @@ const AuthView = () => {
             <span>
               {loading ? 'VERIFYING...' : 
                cooldown > 0 ? `RETRY IN ${cooldown}s` :
-               isRecovery ? 'INITIATE RECOVERY' : 
-               isLogin ? 'INITIATE ACCESS' : 'CREATE PROTOCOL'}
+               isRecovery ? 'RECOVER PASSWORD' : 
+               isLogin ? 'LOGIN' : 'CREATE ACCOUNT'}
             </span>
             {!loading && cooldown === 0 && <ArrowRight size={18} />}
           </button>
@@ -155,7 +155,7 @@ const AuthView = () => {
         <div className="auth-footer">
           {isLogin && !isRecovery && (
             <button className="toggle-auth-btn" onClick={() => setIsRecovery(true)} style={{ marginBottom: 10, opacity: 0.7 }}>
-              FORGOT ACCESS CODE?
+              FORGOT PASSWORD?
             </button>
           )}
           
@@ -165,7 +165,7 @@ const AuthView = () => {
              </button>
           ) : (
             <button className="toggle-auth-btn" onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? "DON'T HAVE AN IDENTITY? CREATE ONE" : "ALREADY VERIFIED? LOGIN"}
+              {isLogin ? "DON'T HAVE AN ACCOUNT? CREATE ONE" : "ALREADY HAVE AN ACCOUNT? LOGIN"}
             </button>
           )}
         </div>
